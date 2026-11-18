@@ -35,3 +35,10 @@
 28. [Build a Multi-select Dropdown](./28-multi-select-dropdown.md)
 29. [Build a Countdown Timer](./29-countdown-timer.md)
 30. [Build a Tic-Tac-Toe Game](./30-tic-tac-toe.md)
+
+#### New Interview Practice Questions
+31. [Build a Command Palette](./31-command-palette.md)
+32. [Build a File Upload Manager](./32-file-upload-manager.md)
+33. [Build Undo / Redo History](./33-undo-redo-history.md)
+34. [Build a Seat Booking Interface](./34-seat-booking.md)
+35. [Build a Tree View / Nested Menu](./35-tree-view.md)

@@ -11,23 +11,27 @@
 
 // JavaScript Solution - DP
 function maximalSquare(matrix) {
-  const m = matrix.length, n = matrix[0].length;
-  const dp = new Array(n + 1).fill(0);
-  let maxSide = 0, prev = 0;
+  if (!matrix.length || !matrix[0].length) return 0;
 
-  for (let r = 1; r <= m; r++) {
-    for (let c = 1; c <= n; c++) {
-      const temp = dp[c];
-      if (matrix[r-1][c-1] === '1') {
+  const rows = matrix.length;
+  const columns = matrix[0].length;
+  const dp = new Array(columns + 1).fill(0);
+  let maxSide = 0;
+
+  for (let r = 1; r <= rows; r += 1) {
+    let diagonal = 0;
+
+    for (let c = 1; c <= columns; c += 1) {
+      const above = dp[c];
+      if (matrix[r - 1][c - 1] === '1') {
         // min of top, left, top-left diagonal + 1
-        dp[c] = Math.min(dp[c], dp[c-1], prev) + 1;
+        dp[c] = Math.min(dp[c], dp[c - 1], diagonal) + 1;
         maxSide = Math.max(maxSide, dp[c]);
       } else {
         dp[c] = 0;
       }
-      prev = temp;
+      diagonal = above;
     }
-    prev = 0; // reset for new row
   }
 
   return maxSide * maxSide;
@@ -38,6 +42,9 @@ module.exports = maximalSquare;
 /* Python Solution:
 
 def maximalSquare(matrix):
+    if not matrix or not matrix[0]:
+        return 0
+
     m, n = len(matrix), len(matrix[0])
     dp = [0] * (n + 1)
     max_side = 0

@@ -51,3 +51,6 @@ function MonthView({ year, month, events }) {
 - Start with data model + monthly grid, add complexity
 - Mention date libraries (date-fns, dayjs) for production
 - Discuss timezone handling
+- Store event instants with an explicit timezone policy; local ISO strings are ambiguous across clients.
+- Include any event whose interval overlaps the displayed day, not only events whose start string matches that date.
+- Clarify week-start locale and whether all-day events use date-only values.

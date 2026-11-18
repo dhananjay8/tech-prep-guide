@@ -1,6 +1,8 @@
-# Factory Pattern
+# Simple Factory
 
-**Intent:** Create objects without specifying the exact class. Delegate instantiation to a factory method.
+**Intent:** Centralize a creation decision so callers depend on a shared product
+interface rather than concrete constructors. This example is a simple factory;
+it is not the GoF Factory Method pattern.
 
 **When to use:** Creating objects based on type/config, database drivers, payment processors, notification channels.
 
@@ -26,9 +28,13 @@ const v = createVehicle("car");
 console.log(v.drive()); // "Driving a car"
 
 // Registry-based factory (extensible)
-const vehicleRegistry = {};
-function register(type, cls) { vehicleRegistry[type] = cls; }
-function create(type) { return new vehicleRegistry[type](); }
+const vehicleRegistry = new Map();
+function register(type, Constructor) { vehicleRegistry.set(type, Constructor); }
+function create(type) {
+  const Constructor = vehicleRegistry.get(type);
+  if (!Constructor) throw new Error(`Unknown vehicle: ${type}`);
+  return new Constructor();
+}
 
 register("car", Car);
 register("truck", Truck);
@@ -72,7 +78,7 @@ class VehicleFactory {
 ```
 
 ## Interview Talking Points
-- **Simple Factory** vs **Factory Method** vs **Abstract Factory**
-- Eliminates `new` keyword scattered through code — single point of creation
-- Open/Closed Principle: add new types without modifying existing code (registry pattern)
+- **Simple Factory** centralizes a selection; **Factory Method** delegates creation to a subclass; **Abstract Factory** creates a related product family.
+- Centralizes construction policy; it does not eliminate object creation or automatically make the design open for extension.
+- A registry can allow registration without changing the creator, but validate keys and control who may register implementations.
 - Real-world: `document.createElement()`, React's `createElement()`, payment gateways

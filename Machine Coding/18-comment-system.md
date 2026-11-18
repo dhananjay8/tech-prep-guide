@@ -16,7 +16,14 @@ const comment = {
 
 ## Core: Recursive Comment Tree
 ```javascript
-function CommentThread({ comments, parentId = null, depth = 0 }) {
+function CommentThread({
+  comments,
+  parentId = null,
+  depth = 0,
+  collapsedIds = new Set(),
+  onLike,
+  onReply
+}) {
   const replies = comments.filter(c => c.parentId === parentId);
   if (!replies.length) return null;
 
@@ -30,11 +37,19 @@ function CommentThread({ comments, parentId = null, depth = 0 }) {
           </div>
           <p>{comment.text}</p>
           <div className="actions">
-            <button onClick={() => likeComment(comment.id)}>👍 {comment.likes}</button>
-            <button onClick={() => setReplyTo(comment.id)}>Reply</button>
+            <button onClick={() => onLike(comment.id)}>Like ({comment.likes})</button>
+            <button onClick={() => onReply(comment.id)}>Reply</button>
           </div>
-          {/* Recursive: render children */}
-          <CommentThread comments={comments} parentId={comment.id} depth={depth + 1} />
+          {!collapsedIds.has(comment.id) && (
+            <CommentThread
+              comments={comments}
+              parentId={comment.id}
+              depth={depth + 1}
+              collapsedIds={collapsedIds}
+              onLike={onLike}
+              onReply={onReply}
+            />
+          )}
         </div>
       ))}
     </div>
@@ -48,3 +63,6 @@ function CommentThread({ comments, parentId = null, depth = 0 }) {
 - **Max depth limit** (e.g., 5 levels) then "Continue this thread →"
 - **Optimistic updates** for likes (increment immediately, revert on error)
 - **Collapsible threads**: toggle visibility of child comments
+- Pass actions explicitly instead of relying on undeclared outer-scope handlers.
+- Build a `parentId -> children[]` index once for large threads; filtering the whole list at every recursive level is costly.
+- Enforce ownership, rate limits, and text validation on the server; escape/render comment text as text, not HTML.

@@ -23,12 +23,17 @@ class FeatureFlagClient {
   constructor(userId) {
     this.userId = userId;
     this.flags = {};
-    this.fetchFlags();
+    this.ready = this.fetchFlags().catch(() => {
+      this.flags = {};
+      return this.flags;
+    });
   }
 
   async fetchFlags() {
     const res = await fetch('/api/flags');
+    if (!res.ok) throw new Error(`Could not load flags: ${res.status}`);
     this.flags = await res.json();
+    return this.flags;
   }
 
   isEnabled(flagKey) {
@@ -37,7 +42,8 @@ class FeatureFlagClient {
     if (flag.targetUsers?.includes(this.userId)) return true;
     // Consistent hashing for percentage rollout (same user always gets same result)
     const hash = this.hashUser(this.userId + flagKey);
-    return (hash % 100) < flag.rolloutPercent;
+    const rollout = Math.max(0, Math.min(100, Number(flag.rolloutPercent) || 0));
+    return (hash % 100) < rollout;
   }
 
   hashUser(str) { // Simple deterministic hash
@@ -49,6 +55,7 @@ class FeatureFlagClient {
 
 // Usage
 const flags = new FeatureFlagClient('user-456');
+await flags.ready; // Do not evaluate flags before the initial fetch completes.
 if (flags.isEnabled('new-checkout')) { renderNewCheckout(); }
 else { renderOldCheckout(); }
 ```
@@ -58,6 +65,8 @@ else { renderOldCheckout(); }
 - **React context** to provide flag values across app
 - **Polling or WebSocket** for real-time flag updates
 - **Local cache** with TTL to minimize API calls
+- **Fail-safe default**: define behavior when flags are missing or the service is unavailable.
+- Client-side flags only control presentation; enforce authorization and access rules on the server.
 
 ## Interview Tips
 - Discuss consistent hashing so same user always sees same variant

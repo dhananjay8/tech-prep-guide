@@ -2,6 +2,9 @@
 
 **Intent:** Separate concerns between data, business logic, and UI to keep code maintainable.
 
+These are architectural presentation patterns, not members of the Gang of Four
+object-oriented pattern catalog. Frameworks often combine or adapt their roles.
+
 ---
 
 ## MVC (Model-View-Controller)

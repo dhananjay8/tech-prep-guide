@@ -36,7 +36,7 @@ const enhancedFetch = withLogging(withCache(fetchData));
 enhancedFetch("/api/users"); // logs + fetches
 enhancedFetch("/api/users"); // logs + cache hit
 
-// Express middleware is the decorator pattern:
+// Middleware composes around request handling and is decorator-like:
 // app.use(authenticate);  // decorates every route with auth
 // app.use(rateLimit);     // decorates with rate limiting
 ```
@@ -97,5 +97,7 @@ class MilkDecorator implements Coffee {
 ## Interview Talking Points
 - In JS/Python, decorators are **higher-order functions** (simpler than class-based)
 - Python's `@decorator` syntax is built-in language support
-- Express/Koa middleware chain IS the decorator pattern
+- Express/Koa middleware is decorator-like composition; middleware chains can
+  also be described as Chain of Responsibility depending on how handlers pass
+  control onward.
 - **vs Inheritance**: Decorators compose at runtime; inheritance is static

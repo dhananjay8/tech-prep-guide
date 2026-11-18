@@ -41,7 +41,7 @@ function Poll({ question, options: initialOptions, onVote }) {
         );
       })}
       {!voted && <button onClick={handleVote} disabled={selected === null}>Vote</button>}
-      {voted && <p>Total votes: {totalVotes + 1}</p>}
+      {voted && <p>Total votes: {totalVotes}</p>}
     </div>
   );
 }
@@ -50,6 +50,7 @@ function Poll({ question, options: initialOptions, onVote }) {
 ## Key Patterns
 - **Before vote**: radio buttons for selection
 - **After vote**: show results with animated percentage bars
-- **Prevent double-voting**: `voted` state (server-side: check user_id)
+- **Prevent double-voting**: local `voted` state improves UX; the server must enforce one vote per user.
 - **Real-time updates**: WebSocket or polling for live vote counts
 - **CSS transitions** on bar width for smooth animation
+- Treat server results as the source of truth and derive percentages from the latest returned vote counts.

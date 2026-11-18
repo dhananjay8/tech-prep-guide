@@ -12,15 +12,16 @@
 const user = { name: "Alice", _password: "secret123", role: "admin" };
 
 const secureUser = new Proxy(user, {
-  get(target, prop) {
-    if (prop.startsWith("_")) throw new Error("Access denied to private field");
-    console.log(`Accessing: ${prop}`);
-    return target[prop];
+  get(target, prop, receiver) {
+    if (typeof prop === "string" && prop.startsWith("_")) {
+      throw new Error("Access denied to private field");
+    }
+    console.log(`Accessing: ${String(prop)}`);
+    return Reflect.get(target, prop, receiver);
   },
-  set(target, prop, value) {
+  set(target, prop, value, receiver) {
     if (prop === "role") throw new Error("Cannot modify role");
-    target[prop] = value;
-    return true;
+    return Reflect.set(target, prop, value, receiver);
   }
 });
 
@@ -33,6 +34,8 @@ function createCachingProxy(fn) {
   const cache = new Map();
   return new Proxy(fn, {
     apply(target, thisArg, args) {
+      // Suitable only when JSON serialization is a complete, collision-free key
+      // for this function's inputs and the function is deterministic.
       const key = JSON.stringify(args);
       if (!cache.has(key)) cache.set(key, target.apply(thisArg, args));
       return cache.get(key);
@@ -91,3 +94,7 @@ class ProxyImage implements Image {
 - Types: Virtual (lazy load), Protection (access control), Caching, Logging
 - Real-world: Vue.js reactivity (Proxy), Hibernate lazy loading, API gateways
 - **vs Decorator**: Proxy controls access; Decorator adds behavior
+- Cache keys must represent every input that affects the result; account for
+  `this`, non-JSON values, failures, expiration, and memory bounds where relevant.
+- The JavaScript example hides underscore-prefixed properties for illustration;
+  it is not a security boundary for secrets.

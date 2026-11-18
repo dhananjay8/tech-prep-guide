@@ -17,10 +17,11 @@ class QueryBuilder {
   orderBy(col, dir = "ASC") { this._orderBy = `${col} ${dir}`; return this; }
 
   build() {
+    if (!this._table) throw new Error("A table is required");
     let sql = `SELECT * FROM ${this._table}`;
     if (this._conditions.length) sql += ` WHERE ${this._conditions.join(" AND ")}`;
     if (this._orderBy) sql += ` ORDER BY ${this._orderBy}`;
-    if (this._limit) sql += ` LIMIT ${this._limit}`;
+    if (this._limit !== null) sql += ` LIMIT ${this._limit}`;
     return sql;
   }
 }
@@ -59,7 +60,7 @@ class QueryBuilder:
         sql = f"SELECT * FROM {self._table}"
         if self._conditions:
             sql += f" WHERE {' AND '.join(self._conditions)}"
-        if self._limit:
+        if self._limit is not None:
             sql += f" LIMIT {self._limit}"
         return sql
 
@@ -97,3 +98,9 @@ User user = new User.Builder().name("Alice").age(30).email("a@b.com").build();
 - Solves the "telescoping constructor" problem (too many params)
 - Immutable objects: Builder collects params, `build()` creates the final immutable object
 - Real-world: StringBuilder, ORM query builders, HTTP client builders
+- A builder can enforce invariants before returning the final object; validate
+  required fields and distinguish an omitted value from a valid falsy value
+  such as `0`.
+- The SQL snippet demonstrates fluent construction only. Never interpolate
+  untrusted identifiers or values into SQL; use allowlisted identifiers and
+  parameterized values in production.

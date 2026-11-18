@@ -8,10 +8,15 @@
 | **Selection Sort** | O(n²) | O(n²) | O(n²) | O(1) | ❌ | ✅ |
 | **Insertion Sort** | O(n) | O(n²) | O(n²) | O(1) | ✅ | ✅ |
 | **Merge Sort** | O(n log n) | O(n log n) | O(n log n) | O(n) | ✅ | ❌ |
-| **Quick Sort** | O(n log n) | O(n log n) | O(n²) | O(log n) | ❌ | ✅ |
+| **Quick Sort** | O(n log n) | O(n log n) | O(n²) | O(log n) average, O(n) worst stack | ❌ | ✅ |
 | **Heap Sort** | O(n log n) | O(n log n) | O(n log n) | O(1) | ❌ | ✅ |
-| **Counting Sort** | O(n+k) | O(n+k) | O(n+k) | O(k) | ✅ | ❌ |
-| **Radix Sort** | O(nk) | O(nk) | O(nk) | O(n+k) | ✅ | ❌ |
+| **Counting Sort** | O(n+k) | O(n+k) | O(n+k) | O(n+k) stable / O(k) variants | Implementation-dependent | ❌ |
+| **Radix Sort** | O(d(n+b)) | O(d(n+b)) | O(d(n+b)) | O(n+b) | Yes, with a stable digit sort | ❌ |
+
+`n` is the number of items; `k` is the key range for counting sort; `d` is
+the number of digits/passes and `b` is the radix/base. Counting and radix
+sorts are non-comparison sorts and need assumptions about key representation.
+The table describes common implementations, not every variant.
 
 ---
 
@@ -124,6 +129,10 @@ function partition(arr, lo, hi) {
 }
 ```
 
+This implementation always picks the last element as pivot, so sorted or
+adversarial input can cause O(n²) time and O(n) recursion depth. Randomized
+pivots reduce predictable bad cases but do not change the worst-case bound.
+
 ```python
 def quick_sort(arr, lo=0, hi=None):
     if hi is None: hi = len(arr) - 1
@@ -195,7 +204,7 @@ function lowerBound(arr, target) {
   return lo;
 }
 
-// Find rightmost (last occurrence)
+// Upper bound: first index whose value is greater than target
 function upperBound(arr, target) {
   let lo = 0, hi = arr.length;
   while (lo < hi) {
@@ -203,9 +212,19 @@ function upperBound(arr, target) {
     if (arr[mid] <= target) lo = mid + 1;
     else hi = mid;
   }
-  return lo - 1;
+  return lo;
+}
+
+// Last occurrence; upperBound alone may point past all equal values.
+function lastIndexOfSorted(arr, target) {
+  const index = upperBound(arr, target) - 1;
+  return index >= 0 && arr[index] === target ? index : -1;
 }
 ```
+
+`lowerBound` returns the first index with value `>= target`; `upperBound`
+returns the first index with value `> target`. Both return an insertion point
+in `[0, arr.length]`, including when the target is absent.
 
 ```python
 def binary_search(arr, target):
@@ -227,8 +246,14 @@ def binary_search(arr, target):
 |----------|-----------|
 | Small arrays (n < 50) | Insertion Sort |
 | Nearly sorted data | Insertion Sort |
-| General purpose | Merge Sort (stable) or Quick Sort (fast) |
+| General application code | Use the language's built-in sort with an explicit comparator when needed |
 | Memory constrained | Heap Sort (O(1) space) |
-| Known range of integers | Counting Sort |
+| Known, small integer range | Counting Sort |
 | Linked lists | Merge Sort (no random access needed) |
 | Need stable sort | Merge Sort |
+
+In JavaScript, `Array.prototype.sort()` is stable in modern ECMAScript, but its
+time/space complexity is implementation-defined. For numbers, pass a numeric
+comparator such as `(a, b) => a - b`; the default comparator sorts string
+representations. In interviews, state the assumptions behind the algorithm
+you choose rather than claiming one sort is universally fastest.

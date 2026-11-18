@@ -1,8 +1,11 @@
-# Dependency Injection (DI)
+# Dependency Injection (DI) — Technique
 
 **Intent:** Supply dependencies from the outside instead of creating them inside a class.
 
 **When to use:** Improve testability, loose coupling, and modular architecture.
+
+DI is a technique that supports Inversion of Control; it is useful alongside
+design patterns but is not one of the 23 Gang of Four patterns.
 
 ---
 

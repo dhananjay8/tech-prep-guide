@@ -1,12 +1,14 @@
 # Build a Kanban Board (Drag & Drop)
 
 ## Requirements
+
 - Columns: Todo, In Progress, Done (customizable)
 - Add/edit/delete cards
 - Drag and drop cards between columns
 - Persist state
 
 ## Data Model
+
 ```javascript
 const board = {
   columns: {
@@ -25,6 +27,7 @@ const board = {
 ## Drag & Drop Implementation
 
 ### Using HTML5 Drag API
+
 ```javascript
 // Card component
 const Card = ({ card, columnId }) => {
@@ -53,27 +56,36 @@ const Column = ({ column, cards, onDrop }) => {
 ```
 
 ### Move Logic
+
 ```javascript
 const moveCard = (cardId, sourceColId, destColId) => {
   setBoard(prev => {
-    const newBoard = { ...prev, columns: { ...prev.columns } };
-    // Remove from source
-    newBoard.columns[sourceColId] = {
-      ...prev.columns[sourceColId],
-      cardIds: prev.columns[sourceColId].cardIds.filter(id => id !== cardId)
+    const source = prev.columns[sourceColId];
+    const destination = prev.columns[destColId];
+    if (!source || !destination || !source.cardIds.includes(cardId)) return prev;
+
+    const columns = { ...prev.columns };
+    columns[sourceColId] = {
+      ...source,
+      cardIds: source.cardIds.filter(id => id !== cardId)
     };
-    // Add to destination
-    newBoard.columns[destColId] = {
-      ...prev.columns[destColId],
-      cardIds: [...prev.columns[destColId].cardIds, cardId]
+    const destinationIds = sourceColId === destColId
+      ? columns[destColId].cardIds
+      : destination.cardIds;
+    columns[destColId] = {
+      ...destination,
+      cardIds: [...destinationIds, cardId]
     };
-    return newBoard;
+    return { ...prev, columns };
   });
 };
 ```
 
 ## Interview Tips
+
 - Normalize data (separate cards and columns, reference by ID)
 - Use `react-beautiful-dnd` or HTML5 drag API
 - Handle edge cases: drop on same column, empty columns
 - Responsive design: stack columns on mobile
+- Include a target card/index in the drop payload to support insertion at a specific position.
+- Provide keyboard-accessible move actions; drag-and-drop should not be the only way to change columns.

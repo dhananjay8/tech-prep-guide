@@ -15,18 +15,65 @@ const getCellId = (row, col) => `${String.fromCharCode(65 + col)}${row + 1}`; //
 
 ## Core: Formula Evaluation
 ```javascript
+function evaluateArithmetic(source) {
+  const tokens = source.match(/\d+(?:\.\d+)?|[()+\-*/]/g) ?? [];
+  const compactSource = source.replace(/\s+/g, '');
+  if (tokens.join('') !== compactSource) throw new Error('Invalid formula');
+
+  let index = 0;
+  const parseExpression = () => {
+    let value = parseTerm();
+    while (tokens[index] === '+' || tokens[index] === '-') {
+      const operator = tokens[index++];
+      const right = parseTerm();
+      value = operator === '+' ? value + right : value - right;
+    }
+    return value;
+  };
+  const parseTerm = () => {
+    let value = parseFactor();
+    while (tokens[index] === '*' || tokens[index] === '/') {
+      const operator = tokens[index++];
+      const right = parseFactor();
+      value = operator === '*' ? value * right : value / right;
+    }
+    return value;
+  };
+  const parseFactor = () => {
+    if (tokens[index] === '+' || tokens[index] === '-') {
+      const sign = tokens[index++] === '-' ? -1 : 1;
+      return sign * parseFactor();
+    }
+    if (tokens[index] === '(') {
+      index += 1;
+      const value = parseExpression();
+      if (tokens[index++] !== ')') throw new Error('Missing closing parenthesis');
+      return value;
+    }
+    const token = tokens[index++];
+    if (!/^\d+(?:\.\d+)?$/.test(token ?? '')) throw new Error('Expected a number');
+    return Number(token);
+  };
+
+  const result = parseExpression();
+  if (index !== tokens.length || !Number.isFinite(result)) throw new Error('Invalid formula');
+  return result;
+}
+
 function evaluateFormula(formula, cells) {
   if (!formula.startsWith('=')) return formula;
   let expr = formula.slice(1); // remove '='
 
-  // Replace cell references (A1, B2, etc.) with their values
-  expr = expr.replace(/([A-Z])(\d+)/g, (match) => {
-    const val = cells[match]?.value;
-    return isNaN(val) ? 0 : Number(val);
-  });
-
-  try { return eval(expr); } // caution: use a safe math parser in production
-  catch { return '#ERROR'; }
+  try {
+    expr = expr.replace(/\b([A-Z]+[1-9]\d*)\b/g, (reference) => {
+      const value = Number(cells[reference]?.value ?? 0);
+      if (!Number.isFinite(value)) throw new Error('Cell value is not numeric');
+      return `(${value})`;
+    });
+    return evaluateArithmetic(expr);
+  } catch {
+    return '#ERROR!';
+  }
 }
 ```
 
@@ -75,5 +122,6 @@ function Spreadsheet({ rows = 50, cols = 26 }) {
 
 ## Interview Tips
 - Start simple: editable grid → add formulas → add formatting
-- Mention circular dependency detection for formulas
-- Use safe math parser (not eval) in production
+- Reject circular references and recalculate dependents when a cell changes.
+- Keep formulas separate from calculated values and surface parse errors in the UI.
+- Never execute user-entered formulas with `eval`; use a restricted parser like the one above.

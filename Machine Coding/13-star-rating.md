@@ -9,10 +9,11 @@
 ## Implementation
 
 ```javascript
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 function StarRating({ maxStars = 5, value = 0, onChange, readOnly = false, allowClear = true }) {
   const [hoverValue, setHoverValue] = useState(0);
+  const starRefs = useRef([]);
   const displayValue = hoverValue || value;
 
   const handleClick = (rating) => {
@@ -22,9 +23,22 @@ function StarRating({ maxStars = 5, value = 0, onChange, readOnly = false, allow
 
   const handleKeyDown = (event, rating) => {
     if (readOnly) return;
-    if (event.key === 'Enter' || event.key === ' ') handleClick(rating);
-    if (event.key === 'ArrowRight') onChange?.(Math.min(value + 1, maxStars));
-    if (event.key === 'ArrowLeft') onChange?.(Math.max(value - 1, 0));
+    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+      event.preventDefault();
+      const next = Math.max(1, Math.min(maxStars, rating + (event.key === 'ArrowRight' ? 1 : -1)));
+      onChange?.(next);
+      starRefs.current[next - 1]?.focus();
+    }
+    if (event.key === 'Home') {
+      event.preventDefault();
+      onChange?.(1);
+      starRefs.current[0]?.focus();
+    }
+    if (event.key === 'End') {
+      event.preventDefault();
+      onChange?.(maxStars);
+      starRefs.current[maxStars - 1]?.focus();
+    }
   };
 
   return (
@@ -45,8 +59,9 @@ function StarRating({ maxStars = 5, value = 0, onChange, readOnly = false, allow
             role="radio"
             aria-label={`${starValue} star${starValue > 1 ? 's' : ''}`}
             aria-checked={starValue === value}
-            tabIndex={readOnly ? -1 : 0}
+            tabIndex={readOnly ? -1 : (starValue === (value || 1) ? 0 : -1)}
             disabled={readOnly}
+            ref={node => { starRefs.current[i] = node; }}
             onClick={() => handleClick(starValue)}
             onMouseEnter={() => !readOnly && setHoverValue(starValue)}
             onKeyDown={(event) => handleKeyDown(event, starValue)}
@@ -84,6 +99,7 @@ function App() {
 - **Accessibility**: role="radiogroup", keyboard selection, aria-checked
 - **Reusable**: maxStars, readOnly, onChange as props
 - **Clear support**: clicking selected rating can reset to zero
+- **Roving focus**: keep one star in the tab order and move focus with arrow keys.
 
 ## Interview Tips
 - Simple but tests component design skills

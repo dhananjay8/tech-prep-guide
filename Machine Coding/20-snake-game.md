@@ -9,6 +9,8 @@
 ## Implementation
 
 ```javascript
+import { useCallback, useEffect, useState } from 'react';
+
 const GRID_SIZE = 20;
 const CELL_SIZE = 20;
 const INITIAL_SPEED = 200;
@@ -20,14 +22,21 @@ function SnakeGame() {
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
 
-  // Place food at random position (not on snake)
-  const placeFood = useCallback(() => {
-    let newFood;
-    do {
-      newFood = { x: Math.floor(Math.random() * GRID_SIZE), y: Math.floor(Math.random() * GRID_SIZE) };
-    } while (snake.some(s => s.x === newFood.x && s.y === newFood.y));
-    setFood(newFood);
-  }, [snake]);
+  // Choose from free cells so a full board cannot cause an endless random loop.
+  const placeFood = useCallback((occupiedSnake) => {
+    const occupied = new Set(occupiedSnake.map(cell => `${cell.x},${cell.y}`));
+    const freeCells = [];
+    for (let y = 0; y < GRID_SIZE; y += 1) {
+      for (let x = 0; x < GRID_SIZE; x += 1) {
+        if (!occupied.has(`${x},${y}`)) freeCells.push({ x, y });
+      }
+    }
+    if (!freeCells.length) {
+      setGameOver(true); // A full board is a win.
+      return;
+    }
+    setFood(freeCells[Math.floor(Math.random() * freeCells.length)]);
+  }, []);
 
   // Handle keyboard input
   useEffect(() => {
@@ -53,16 +62,18 @@ function SnakeGame() {
         if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
           setGameOver(true); return prev;
         }
-        // Self collision
-        if (prev.some(s => s.x === head.x && s.y === head.y)) {
+        const eatsFood = head.x === food.x && head.y === food.y;
+        // The tail vacates its cell on a normal move, so it is not a collision target.
+        const bodyToCheck = eatsFood ? prev : prev.slice(0, -1);
+        if (bodyToCheck.some(s => s.x === head.x && s.y === head.y)) {
           setGameOver(true); return prev;
         }
 
         const newSnake = [head, ...prev];
         // Eat food
-        if (head.x === food.x && head.y === food.y) {
+        if (eatsFood) {
           setScore(s => s + 1);
-          placeFood();
+          placeFood(newSnake);
         } else {
           newSnake.pop(); // remove tail if no food eaten
         }
@@ -71,7 +82,7 @@ function SnakeGame() {
     }, Math.max(50, INITIAL_SPEED - score * 5)); // speed up with score
 
     return () => clearInterval(timer);
-  }, [direction, food, gameOver, score]);
+  }, [direction, food, gameOver, score, placeFood]);
 
   return (
     <div>
@@ -99,9 +110,12 @@ function SnakeGame() {
 - **Direction guard**: prevent 180° turn (can't go left if going right)
 - **Collision detection**: check head against walls and body
 - **Food placement**: random position not overlapping snake
+- Allow moving into the current tail cell when the tail moves away on that tick.
+- Handle a full-board win without looping forever while searching for a free food cell.
 
 ## Interview Tips
 - Start with data structures (snake array, direction vector)
 - Game loop with cleanup (clearInterval)
+- Keep the game transition pure in a reducer in production; avoid setting unrelated state from inside a state updater.
 - Mention: requestAnimationFrame for smoother animation in production
 - Bonus features: pause, high score, grid wrap-around mode

@@ -8,11 +8,12 @@
 
 ## Implementation
 ```javascript
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 function ImageUploadPreview({ maxSizeMb = 5, multiple = true }) {
   const [files, setFiles] = useState([]);
   const [error, setError] = useState('');
+  const previewUrls = useRef(new Set());
 
   const handleChange = (event) => {
     const selectedFiles = Array.from(event.target.files ?? []);
@@ -28,24 +29,37 @@ function ImageUploadPreview({ maxSizeMb = 5, multiple = true }) {
         setError(`Each file must be smaller than ${maxSizeMb}MB`);
         continue;
       }
-      validFiles.push({ id: crypto.randomUUID(), file, previewUrl: URL.createObjectURL(file) });
+      const previewUrl = URL.createObjectURL(file);
+      previewUrls.current.add(previewUrl);
+      validFiles.push({ id: crypto.randomUUID(), file, previewUrl });
     }
 
-    setFiles(prev => multiple ? [...prev, ...validFiles] : validFiles.slice(0, 1));
+    if (multiple) {
+      setFiles(prev => [...prev, ...validFiles]);
+    } else {
+      files.forEach(item => {
+        URL.revokeObjectURL(item.previewUrl);
+        previewUrls.current.delete(item.previewUrl);
+      });
+      setFiles(validFiles.slice(0, 1));
+    }
     event.target.value = '';
   };
 
   const removeFile = (id) => {
-    setFiles(prev => {
-      const fileToRemove = prev.find(item => item.id === id);
-      if (fileToRemove) URL.revokeObjectURL(fileToRemove.previewUrl);
-      return prev.filter(item => item.id !== id);
-    });
+    const fileToRemove = files.find(item => item.id === id);
+    if (!fileToRemove) return;
+    URL.revokeObjectURL(fileToRemove.previewUrl);
+    previewUrls.current.delete(fileToRemove.previewUrl);
+    setFiles(prev => prev.filter(item => item.id !== id));
   };
 
   useEffect(() => {
-    return () => files.forEach(item => URL.revokeObjectURL(item.previewUrl));
-  }, [files]);
+    return () => {
+      previewUrls.current.forEach(url => URL.revokeObjectURL(url));
+      previewUrls.current.clear();
+    };
+  }, []);
 
   return (
     <div>
@@ -66,9 +80,10 @@ function ImageUploadPreview({ maxSizeMb = 5, multiple = true }) {
 
 ## Key Patterns
 - **Object URLs**: preview local files without upload
-- **Cleanup**: call `URL.revokeObjectURL`
+- **Cleanup**: revoke removed/replaced URLs and all remaining URLs on unmount
 - **Validation**: type and size before adding
 - **Reset input**: allow reselecting the same file
+- Do not revoke every URL whenever the files array changes; that breaks retained previews.
 
 ## Interview Tips
 - Discuss drag-and-drop as an extension

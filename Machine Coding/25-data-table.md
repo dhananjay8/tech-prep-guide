@@ -1,12 +1,14 @@
 # Build a Data Table with Sorting and Filtering
 
 ## Requirements
+
 - Render rows and configurable columns
 - Support sorting by column
 - Support text filtering and pagination
 - Keep derived rows memoized
 
 ## Data Model
+
 ```javascript
 const columns = [
   { key: 'name', label: 'Name', sortable: true },
@@ -15,6 +17,7 @@ const columns = [
 ```
 
 ## Implementation
+
 ```javascript
 import { useMemo, useState } from 'react';
 
@@ -27,7 +30,7 @@ function DataTable({ rows, columns, pageSize = 10 }) {
     const normalizedQuery = query.trim().toLowerCase();
 
     const filtered = normalizedQuery
-      ? rows.filter(row => columns.some(column => String(row[column.key]).toLowerCase().includes(normalizedQuery)))
+      ? rows.filter(row => columns.some(column => String(row[column.key] ?? '').toLowerCase().includes(normalizedQuery)))
       : rows;
 
     const sorted = sort.key
@@ -69,9 +72,11 @@ function DataTable({ rows, columns, pageSize = 10 }) {
           ))}</tr>
         </thead>
         <tbody>
-          {pagedRows.map(row => (
-            <tr key={row.id}>{columns.map(column => <td key={column.key}>{row[column.key]}</td>)}</tr>
-          ))}
+          {pagedRows.length
+            ? pagedRows.map(row => (
+                <tr key={row.id}>{columns.map(column => <td key={column.key}>{row[column.key]}</td>)}</tr>
+              ))
+            : <tr><td colSpan={columns.length}>No results found.</td></tr>}
         </tbody>
       </table>
       <button disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>Prev</button>
@@ -83,12 +88,14 @@ function DataTable({ rows, columns, pageSize = 10 }) {
 ```
 
 ## Key Patterns
+
 - **Derived state**: filter, sort, paginate in order
 - **Memoization**: compute visible rows with `useMemo`
 - **Stable keys**: use row IDs, not indexes
 - **Pagination reset**: reset page on filter/sort changes
 
 ## Interview Tips
+
 - Clarify client-side vs server-side sorting
 - Discuss large datasets and virtualization
 - Handle empty state explicitly

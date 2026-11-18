@@ -1,28 +1,36 @@
-# Observer Pattern (Pub/Sub)
+# Observer Pattern
 
 **Intent:** Define a one-to-many dependency so that when one object changes state, all dependents are notified.
 
 **When to use:** Event systems, UI updates, notifications, real-time data feeds, webhooks.
+
+This is an in-process event-emitter example. Observer commonly connects a
+subject directly to listeners; publish/subscribe usually adds a broker or
+channel boundary between publishers and subscribers.
 
 ---
 
 ## JavaScript
 ```javascript
 class EventEmitter {
-  constructor() { this.listeners = {}; }
+  constructor() { this.listeners = new Map(); }
 
   on(event, callback) {
-    if (!this.listeners[event]) this.listeners[event] = [];
-    this.listeners[event].push(callback);
-    return this; // allow chaining
+    if (!this.listeners.has(event)) this.listeners.set(event, new Set());
+    this.listeners.get(event).add(callback);
+    return () => this.off(event, callback);
   }
 
   off(event, callback) {
-    this.listeners[event] = (this.listeners[event] || []).filter(cb => cb !== callback);
+    const listeners = this.listeners.get(event);
+    if (!listeners) return;
+    listeners.delete(callback);
+    if (listeners.size === 0) this.listeners.delete(event);
   }
 
   emit(event, ...args) {
-    (this.listeners[event] || []).forEach(cb => cb(...args));
+    // Snapshot so listeners may unsubscribe safely while handling an event.
+    for (const callback of [...(this.listeners.get(event) || [])]) callback(...args);
   }
 }
 
@@ -45,12 +53,17 @@ class EventEmitter:
 
     def on(self, event, callback):
         self._listeners.setdefault(event, []).append(callback)
+        return lambda: self.off(event, callback)
 
     def off(self, event, callback):
-        self._listeners.get(event, []).remove(callback)
+        listeners = self._listeners.get(event)
+        if listeners and callback in listeners:
+            listeners.remove(callback)
+            if not listeners:
+                del self._listeners[event]
 
     def emit(self, event, *args, **kwargs):
-        for cb in self._listeners.get(event, []):
+        for cb in tuple(self._listeners.get(event, [])):
             cb(*args, **kwargs)
 
 emitter = EventEmitter()
@@ -70,8 +83,16 @@ public class EventEmitter<T> {
         listeners.computeIfAbsent(event, k -> new ArrayList<>()).add(callback);
     }
 
+    public void off(String event, Consumer<T> callback) {
+        List<Consumer<T>> eventListeners = listeners.get(event);
+        if (eventListeners == null) return;
+        eventListeners.remove(callback);
+        if (eventListeners.isEmpty()) listeners.remove(event);
+    }
+
     public void emit(String event, T data) {
-        listeners.getOrDefault(event, List.of()).forEach(cb -> cb.accept(data));
+        List.copyOf(listeners.getOrDefault(event, List.of()))
+            .forEach(cb -> cb.accept(data));
     }
 }
 ```
@@ -80,5 +101,6 @@ public class EventEmitter<T> {
 - **Loose coupling**: Publisher doesn't know who subscribes
 - Node.js `EventEmitter` is the built-in implementation
 - **Memory leaks**: Always clean up listeners (`.off()`) to prevent leaks
-- **Async variant**: Event queue with async processing (message brokers like Kafka)
+- Decide whether a listener exception should stop delivery to later listeners or be isolated and reported.
+- **Async variant**: a queue/broker can decouple delivery, but then delivery guarantees, ordering, retries, and duplicate handling must be designed separately.
 - Related patterns: Mediator, Event Bus, Reactive Streams (RxJS)

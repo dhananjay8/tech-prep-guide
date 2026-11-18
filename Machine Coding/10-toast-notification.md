@@ -19,7 +19,7 @@ function ToastProvider({ children }) {
 
   const removeToast = useCallback((id) => {
     const timerId = timers.current.get(id);
-    if (timerId) clearTimeout(timerId);
+    if (timerId !== undefined) clearTimeout(timerId);
     timers.current.delete(id);
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
@@ -27,8 +27,10 @@ function ToastProvider({ children }) {
   const addToast = useCallback((message, type = 'info', duration = 3000) => {
     const id = crypto.randomUUID();
     setToasts(prev => [...prev, { id, message, type, duration }]);
-    const timerId = setTimeout(() => removeToast(id), duration);
-    timers.current.set(id, timerId);
+    if (duration > 0) {
+      const timerId = setTimeout(() => removeToast(id), duration);
+      timers.current.set(id, timerId);
+    }
     return id;
   }, [removeToast]);
 
@@ -74,6 +76,7 @@ function SomeComponent() {
 ## Key Patterns
 - **Context API** for global access to `addToast`
 - **Auto-dismiss** with setTimeout
+- **Persistent toast**: use `duration <= 0` and remove it explicitly
 - **Stacking**: CSS flex column, newest at bottom
 - **Animations**: CSS keyframes for enter/exit
 - **Cleanup**: clear timers on manual dismiss and unmount
@@ -83,3 +86,4 @@ function SomeComponent() {
 - Mention aria-live="polite" for accessibility
 - Handle edge case: rapid toast creation (queue/limit)
 - Cleanup: clear timeout on manual dismiss
+- Use `role="alert"` for urgent errors and `role="status"` for routine updates; avoid announcing the entire stack repeatedly.

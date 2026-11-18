@@ -46,6 +46,9 @@ const total = subtotal - discountAmount + cart.shipping;
 - **Derived state**: subtotal, discount, total as computed values (not stored)
 - **localStorage sync**: persist cart on every update
 - **Multi-step checkout**: stepper component with validation per step
+- Store prices as integer minor units (for example, cents), not floating-point dollars.
+- Clamp quantities to valid stock limits and remove an item when quantity reaches zero.
+- Recalculate prices, discounts, tax, and stock on the server before creating a payment.
 
 ## Interview Tips
 - Use useReducer not useState for cart logic

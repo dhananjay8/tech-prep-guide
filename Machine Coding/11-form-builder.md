@@ -25,14 +25,21 @@ function DynamicForm({ schema, onSubmit }) {
   const validate = () => {
     const newErrors = {};
     schema.forEach(field => {
-      const val = values[field.name] || '';
-      if (field.required && !val) newErrors[field.name] = `${field.label} is required`;
-      else if (field.minLength && val.length < field.minLength)
+      const val = values[field.name] ?? '';
+      const hasValue = field.type === 'checkbox'
+        ? Boolean(val)
+        : String(val).trim().length > 0;
+      if (field.required && !hasValue) newErrors[field.name] = `${field.label} is required`;
+      else if (hasValue && field.type === 'number' && !Number.isFinite(Number(val)))
+        newErrors[field.name] = `${field.label} must be a number`;
+      else if (hasValue && field.minLength && String(val).length < field.minLength)
         newErrors[field.name] = `Min ${field.minLength} characters`;
-      else if (field.pattern && !field.pattern.test(val))
+      else if (hasValue && field.pattern && !field.pattern.test(String(val)))
         newErrors[field.name] = `Invalid ${field.label.toLowerCase()}`;
-      else if (field.min && Number(val) < field.min)
+      else if (hasValue && field.min != null && Number(val) < field.min)
         newErrors[field.name] = `Min value is ${field.min}`;
+      else if (hasValue && field.max != null && Number(val) > field.max)
+        newErrors[field.name] = `Max value is ${field.max}`;
     });
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -44,17 +51,46 @@ function DynamicForm({ schema, onSubmit }) {
     <form onSubmit={handleSubmit}>
       {schema.map(field => (
         <div key={field.name}>
-          <label>{field.label}</label>
+          <label htmlFor={`field-${field.name}`}>{field.label}</label>
           {field.type === 'select' ? (
-            <select value={values[field.name] || ''} onChange={e => setValues({...values, [field.name]: e.target.value})}>
+            <select
+              id={`field-${field.name}`}
+              value={values[field.name] ?? ''}
+              aria-invalid={Boolean(errors[field.name])}
+              aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
+              onChange={e => setValues(prev => ({ ...prev, [field.name]: e.target.value }))}
+            >
               <option value="">Select...</option>
-              {field.options.map(o => <option key={o}>{o}</option>)}
+              {field.options.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
+          ) : field.type === 'textarea' ? (
+            <textarea
+              id={`field-${field.name}`}
+              value={values[field.name] ?? ''}
+              aria-invalid={Boolean(errors[field.name])}
+              aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
+              onChange={e => setValues(prev => ({ ...prev, [field.name]: e.target.value }))}
+            />
+          ) : field.type === 'checkbox' ? (
+            <input
+              id={`field-${field.name}`}
+              type="checkbox"
+              checked={Boolean(values[field.name])}
+              aria-invalid={Boolean(errors[field.name])}
+              aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
+              onChange={e => setValues(prev => ({ ...prev, [field.name]: e.target.checked }))}
+            />
           ) : (
-            <input type={field.type} value={values[field.name] || ''}
-              onChange={e => setValues({...values, [field.name]: e.target.value})} />
+            <input
+              id={`field-${field.name}`}
+              type={field.type}
+              value={values[field.name] ?? ''}
+              aria-invalid={Boolean(errors[field.name])}
+              aria-describedby={errors[field.name] ? `error-${field.name}` : undefined}
+              onChange={e => setValues(prev => ({ ...prev, [field.name]: e.target.value }))}
+            />
           )}
-          {errors[field.name] && <span className="error">{errors[field.name]}</span>}
+          {errors[field.name] && <span id={`error-${field.name}`} className="error">{errors[field.name]}</span>}
         </div>
       ))}
       <button type="submit">Submit</button>

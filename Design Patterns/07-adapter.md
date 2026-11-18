@@ -1,6 +1,8 @@
 # Adapter Pattern
 
-**Intent:** Convert the interface of a class into another interface clients expect. Bridge incompatible APIs.
+**Intent:** Convert an existing interface into one the client expects without
+changing the adaptee. The separate Bridge pattern decouples an abstraction from
+its implementation; it is not the same as Adapter.
 
 **When to use:** Integrating third-party libraries, legacy code migration, normalizing different API responses.
 
@@ -70,3 +72,5 @@ class VlcAdapter implements MediaPlayer {
 - Real-world: ORM adapters (same interface for MySQL/Postgres/MongoDB), API response normalization
 - **vs Facade**: Adapter changes interface; Facade simplifies interface
 - **vs Proxy**: Proxy has same interface; Adapter has different interface
+- Normalize errors and define what happens when the adaptee returns malformed
+  or incomplete data; translation is more than renaming fields.

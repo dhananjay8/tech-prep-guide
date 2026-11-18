@@ -24,22 +24,35 @@ function ChatUI() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [connected, setConnected] = useState(false);
   const messagesEndRef = useRef(null);
   const ws = useRef(null);
+  const typingTimer = useRef(null);
 
   // WebSocket connection
   useEffect(() => {
-    ws.current = new WebSocket('ws://localhost:8080/chat');
-    ws.current.onmessage = (event) => {
+    const socket = new WebSocket('ws://localhost:8080/chat');
+    ws.current = socket;
+    socket.onopen = () => setConnected(true);
+    socket.onclose = () => setConnected(false);
+    socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'message') {
-        setMessages(prev => [...prev, data.message]);
+        // The server echoes the client-generated ID, making optimistic sends idempotent.
+        setMessages(prev => prev.some(message => message.id === data.message.id)
+          ? prev
+          : [...prev, data.message]);
       } else if (data.type === 'typing') {
         setIsTyping(true);
-        setTimeout(() => setIsTyping(false), 2000);
+        clearTimeout(typingTimer.current);
+        typingTimer.current = setTimeout(() => setIsTyping(false), 2000);
       }
     };
-    return () => ws.current.close();
+    return () => {
+      clearTimeout(typingTimer.current);
+      socket.close();
+      ws.current = null;
+    };
   }, []);
 
   // Auto-scroll to latest message
@@ -48,8 +61,9 @@ function ChatUI() {
   }, [messages]);
 
   const sendMessage = () => {
-    if (!input.trim()) return;
-    const msg = { id: Date.now(), senderId: 'me', text: input, timestamp: Date.now() };
+    const text = input.trim();
+    if (!text || ws.current?.readyState !== WebSocket.OPEN) return;
+    const msg = { id: crypto.randomUUID(), senderId: 'me', text, timestamp: Date.now() };
     ws.current.send(JSON.stringify({ type: 'message', message: msg }));
     setMessages(prev => [...prev, msg]);
     setInput('');
@@ -88,3 +102,6 @@ function ChatUI() {
 - Handle reconnection on WebSocket disconnect
 - Message ordering and deduplication
 - Virtualize message list for long conversations
+- Do not send until the socket is open; show reconnecting/offline state and retry safely.
+- Keep the client message ID through server acknowledgement to avoid duplicate optimistic and echoed messages.
+- Scroll only when the user is already near the bottom; do not pull them away from older messages.

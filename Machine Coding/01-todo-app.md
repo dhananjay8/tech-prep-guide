@@ -32,22 +32,36 @@ const todo = {
 ## Core Implementation (React)
 
 ```javascript
-// State: array of todos
-const [todos, setTodos] = useState([]);
+// Hydrate once; guard browser storage because it can be unavailable or invalid.
+const [todos, setTodos] = useState(() => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = JSON.parse(window.localStorage.getItem('todos') ?? '[]');
+    return Array.isArray(stored) ? stored : [];
+  } catch {
+    return [];
+  }
+});
 const [filter, setFilter] = useState('all'); // all | active | completed
 
 // Add todo
 const addTodo = (text) => {
-  setTodos([...todos, { id: crypto.randomUUID(), text, completed: false, createdAt: Date.now() }]);
+  const normalizedText = text.trim();
+  if (!normalizedText) return;
+  setTodos(prev => [
+    ...prev,
+    { id: crypto.randomUUID(), text: normalizedText, completed: false, createdAt: Date.now() }
+  ]);
 };
 
 // Toggle complete
 const toggleTodo = (id) => {
-  setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+  setTodos(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
 };
 
 // Delete todo
-const deleteTodo = (id) => setTodos(todos.filter(t => t.id !== id));
+const deleteTodo = (id) => setTodos(prev => prev.filter(t => t.id !== id));
+const clearCompleted = () => setTodos(prev => prev.filter(t => !t.completed));
 
 // Filter logic
 const filteredTodos = todos.filter(t => {
@@ -58,7 +72,11 @@ const filteredTodos = todos.filter(t => {
 
 // Persist to localStorage
 useEffect(() => {
-  localStorage.setItem('todos', JSON.stringify(todos));
+  try {
+    window.localStorage.setItem('todos', JSON.stringify(todos));
+  } catch {
+    // The UI still works when storage is disabled or full.
+  }
 }, [todos]);
 ```
 
@@ -71,6 +89,8 @@ useEffect(() => {
 ## Interview Tips
 - Start with data model, then component tree
 - Show clean state management (useReducer for complex state)
-- Handle edge cases: empty input, duplicate prevention
+- Handle empty input and clarify whether duplicate task titles are allowed.
 - CSS: Show you can style responsively
 - Time: Aim for working MVP in 45 min
+- Keep the visible list derived from `todos` and `filter`; do not store a second filtered copy.
+- For server-rendered apps, hydrate storage after mount to avoid server/client markup mismatch.

@@ -19,45 +19,52 @@ function AutocompleteSearch() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const cache = useRef(new Map());
-  const abortRef = useRef(null);
 
   useEffect(() => {
     const searchTerm = query.trim();
 
-    const timerId = setTimeout(async () => {
-      if (!searchTerm) {
-        setResults([]);
-        setShowDropdown(false);
-        return;
-      }
+    if (!searchTerm) {
+      setResults([]);
+      setShowDropdown(false);
+      setLoading(false);
+      return;
+    }
 
+    const controller = new AbortController();
+    const timerId = setTimeout(async () => {
       if (cache.current.has(searchTerm)) {
         setResults(cache.current.get(searchTerm));
         setShowDropdown(true);
+        setLoading(false);
         return;
       }
 
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
       setLoading(true);
 
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(searchTerm)}`, {
           signal: controller.signal
         });
+        if (!res.ok) throw new Error(`Search failed: ${res.status}`);
         const data = await res.json();
+        if (controller.signal.aborted) return;
         cache.current.set(searchTerm, data);
         setResults(data);
         setShowDropdown(true);
       } catch (error) {
-        if (error.name !== 'AbortError') setResults([]);
+        if (error.name !== 'AbortError') {
+          setResults([]);
+          setShowDropdown(false);
+        }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
     }, 300);
 
-    return () => clearTimeout(timerId);
+    return () => {
+      clearTimeout(timerId);
+      controller.abort();
+    };
   }, [query]);
 
   const handleChange = (e) => {
