@@ -1,0 +1,130 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="aws-multi-account-landing-zone" name="Architecture">
+    <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="0" page="1" pageScale="1" pageWidth="1400" pageHeight="684" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="banner" parent="1" vertex="1" value="Multi-account landing zone&#10;Control Tower establishes an organizational structure; account boundaries contain blast radius." style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=10;fillColor=#172c43;strokeColor=none;spacingLeft=24;align=left;fontSize=18;fontColor=#ffffff;">
+          <mxGeometry x="24" y="20" width="1352" height="102" as="geometry" />
+        </mxCell>
+        <mxCell id="takeaway" parent="1" vertex="1" value="DESIGN NOTE OUs organize accounts. SCPs cap permissions without granting them. Network routing is independent." style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=16;fillColor=#eaf0f7;strokeColor=none;spacingLeft=15;align=left;fontSize=13;fontColor=#28425e;fontSize=13;">
+          <mxGeometry x="24" y="626" width="1352" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="hierarchy" parent="1" vertex="1" value="01   ORGANIZATION AND ACCOUNT STRUCTURE" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#83a6ce;fontColor=#2d5680;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="24" y="140" width="1352" height="449" as="geometry" />
+        </mxCell>
+        <mxCell id="org" parent="hierarchy" vertex="1" value="AWS Organizations&#10;Control Tower landing&#10;zone" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="560" y="50" width="232" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="security" parent="hierarchy" vertex="1" value="01   SECURITY OU" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#83a6ce;fontColor=#2d5680;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="25" y="189" width="422" height="233" as="geometry" />
+        </mxCell>
+        <mxCell id="security_head" parent="security" vertex="1" value="Security OU&#10;Central security services" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="115" y="42" width="192" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="archive" parent="security" vertex="1" value="Log archive account&#10;Org trails; S3 retention" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#f5eff8;strokeColor=#a889b7;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="16" y="151" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-security_head-archive" parent="security" edge="1" source="security_head" target="archive" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.25;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="163" y="125" />
+              <mxPoint x="110" y="125" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="audit" parent="security" vertex="1" value="Audit / security tooling&#10;GuardDuty and Security&#10;Hub" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="218" y="151" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-security_head-audit" parent="security" edge="1" source="security_head" target="audit" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.75;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="259" y="125" />
+              <mxPoint x="312" y="125" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-org-security_head" parent="1" edge="1" source="org" target="security_head" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.16;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="621.12" y="288" />
+              <mxPoint x="260" y="288" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="infra" parent="hierarchy" vertex="1" value="02   INFRASTRUCTURE OU" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#83a6ce;fontColor=#2d5680;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="465" y="189" width="422" height="233" as="geometry" />
+        </mxCell>
+        <mxCell id="infra_head" parent="infra" vertex="1" value="Infrastructure OU&#10;Shared connectivity and&#10;tools" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="115" y="42" width="192" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="network" parent="infra" vertex="1" value="Network account&#10;TGW, DNS, egress&#10;inspection" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="16" y="151" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-infra_head-network" parent="infra" edge="1" source="infra_head" target="network" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.25;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="163" y="125" />
+              <mxPoint x="110" y="125" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="shared" parent="infra" vertex="1" value="Shared services account&#10;CI runners and directory" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="218" y="151" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-infra_head-shared" parent="infra" edge="1" source="infra_head" target="shared" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.75;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="259" y="125" />
+              <mxPoint x="312" y="125" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-org-infra_head" parent="1" edge="1" source="org" target="infra_head" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="288" />
+              <mxPoint x="700" y="288" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="workloads" parent="hierarchy" vertex="1" value="03   WORKLOADS OU" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#83a6ce;fontColor=#2d5680;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="905" y="189" width="422" height="233" as="geometry" />
+        </mxCell>
+        <mxCell id="workloads_head" parent="workloads" vertex="1" value="Workloads OU&#10;Distinct ownership by&#10;environment" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="115" y="42" width="192" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="prod" parent="workloads" vertex="1" value="Production accounts&#10;Scoped workloads and VPCs" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="16" y="151" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-workloads_head-prod" parent="workloads" edge="1" source="workloads_head" target="prod" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.25;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="163" y="125" />
+              <mxPoint x="110" y="125" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nonprod" parent="workloads" vertex="1" value="Stage and dev accounts&#10;Separate accounts per&#10;need" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="218" y="151" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-workloads_head-nonprod" parent="workloads" edge="1" source="workloads_head" target="nonprod" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.75;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="259" y="125" />
+              <mxPoint x="312" y="125" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-org-workloads_head" parent="1" edge="1" source="org" target="workloads_head" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.84;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="778.88" y="288" />
+              <mxPoint x="1140" y="288" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

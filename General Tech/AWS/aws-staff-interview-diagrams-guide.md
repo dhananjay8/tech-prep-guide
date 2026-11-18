@@ -2,33 +2,36 @@
 
 Use the diagram set in this folder to discuss architecture choices using tradeoffs, not just components.
 
+Open a diagram's **Preview + notes** page, then press `Cmd+Shift+V` in VS Code on
+macOS to see the rendered image. No extension is needed for the PNG preview.
+To edit a source, open it with diagrams.net or VS Code's Draw.io Integration
+(`hediet.vscode-drawio`). If it opens as XML, run **Reopen Editor With…** from
+the Command Palette and select the Draw.io editor.
+
+The `.drawio` file is the source of truth. After editing, export a fresh PNG
+alongside it using the same filename stem. Sources, previews, notes and related
+sequence diagrams live together in `diagrams/<use-case>/`.
+
+Difficulty is a suggested interview starting point, not an AWS certification
+rating. Foundation diagrams can still support advanced trade-off discussions.
+
 ## Which Diagram to Use for Which Interview Question
 
-- Scale stateless web/API quickly:
-  - [EC2 high availability](aws-ec2-ha.drawio)
-  - [ECS Fargate high availability](aws-ecs-fargate-ha.drawio)
-  - [EKS multi-AZ](aws-eks-multi-az.drawio)
-
-- Minimize ops overhead and ship fast:
-  - [Serverless Lambda](aws-serverless-lambda.drawio)
-
-- Extreme resilience and global traffic:
-  - [Multi-region active-active](aws-multi-region-active-active.drawio)
-
-- High-security/regulated environments:
-  - [Zero-trust private EKS](aws-zero-trust-private-eks.drawio)
-
-- Decoupled systems and asynchronous reliability:
-  - [Event-driven microservices](aws-event-driven-microservices.drawio)
-
-- Platform governance and enterprise scale:
-  - [Multi-account landing zone](aws-multi-account-landing-zone.drawio)
-
-- Hybrid enterprise networking and migration scenarios:
-  - [Hybrid connectivity: Direct Connect + VPN](aws-hybrid-connectivity-dx-vpn.drawio)
-
-- Identity and secrets at enterprise scale:
-  - [Centralized identity and secrets](aws-centralized-identity-secrets.drawio)
+| Use case | Level | Preview + notes | Editable | Interview prompt |
+| --- | --- | --- | --- | --- |
+| Compute | Foundation | [EC2 high availability](./diagrams/compute/aws-ec2-ha.md) | [Draw.io](./diagrams/compute/aws-ec2-ha.drawio) | How do you survive an AZ failure? |
+| Compute | Advanced | [EKS multi-AZ](./diagrams/compute/aws-eks-multi-az.md) | [Draw.io](./diagrams/compute/aws-eks-multi-az.drawio) | How do you scale without zonal dependencies? |
+| Compute | Foundation | [Serverless Lambda](./diagrams/compute/aws-serverless-lambda.md) | [Draw.io](./diagrams/compute/aws-serverless-lambda.drawio) | How do API, static and background paths differ? |
+| Networking | Advanced | [Hybrid connectivity](./diagrams/networking/aws-hybrid-connectivity-dx-vpn.md) | [Draw.io](./diagrams/networking/aws-hybrid-connectivity-dx-vpn.drawio) | How do Direct Connect and VPN fail over? |
+| Networking | Advanced | [Cross-account PrivateLink](./diagrams/networking/aws-privatelink-cross-account.md) | [Draw.io](./diagrams/networking/aws-privatelink-cross-account.drawio) | How do you expose a private SaaS API? |
+| Reliability | Advanced | [Multi-Region applications](./diagrams/reliability/aws-multi-region-active-active.md) | [Draw.io](./diagrams/reliability/aws-multi-region-active-active.drawio) | What fails over when the writer Region is lost? |
+| Reliability | Advanced | [Aurora global recovery](./diagrams/reliability/aws-aurora-global-disaster-recovery.md) | [Draw.io](./diagrams/reliability/aws-aurora-global-disaster-recovery.drawio) | How do you recover a single writer and reconcile lost writes? |
+| Security | Advanced | [Private EKS](./diagrams/security/aws-zero-trust-private-eks.md) | [Draw.io](./diagrams/security/aws-zero-trust-private-eks.drawio) | How do you protect private cluster ingress and deployment? |
+| Security | Advanced | [Multi-account landing zone](./diagrams/security/aws-multi-account-landing-zone.md) | [Draw.io](./diagrams/security/aws-multi-account-landing-zone.drawio) | How do you separate guardrails and account ownership? |
+| Security | Advanced | [Identity and secrets](./diagrams/security/aws-centralized-identity-secrets.md) | [Draw.io](./diagrams/security/aws-centralized-identity-secrets.drawio) | How do you federate and rotate credentials? |
+| Security | Advanced | [SaaS tenant isolation](./diagrams/security/aws-saas-tenant-isolation.md) | [Draw.io](./diagrams/security/aws-saas-tenant-isolation.drawio) | Where do you enforce tenant isolation? |
+| Integration | Advanced | [Event-driven microservices](./diagrams/integration/aws-event-driven-microservices.md) | [Draw.io](./diagrams/integration/aws-event-driven-microservices.drawio) | How do you handle duplicates and replay? |
+| Data | Advanced | [Governed data lake](./diagrams/data/aws-governed-data-lake.md) | [Draw.io](./diagrams/data/aws-governed-data-lake.drawio) | How do you share and govern data across accounts? |
 
 ## Staff-Level Talking Points
 
@@ -51,9 +54,8 @@ Use the diagram set in this folder to discuss architecture choices using tradeof
 
 ## Sequence Walkthrough References
 
-- [EC2 deployment and request flow](aws-ec2-ha-sequence.md)
-- [ECS Fargate deployment and request flow](aws-ecs-fargate-sequence.md)
-- [EKS deployment and request flow](aws-eks-sequence.md)
-- [Serverless request and event flow](aws-serverless-sequence.md)
-- [Event-driven order processing](aws-event-driven-sequence.md)
-- [Multi-region failover and recovery](aws-multi-region-failover-sequence.md)
+- [EC2 deployment and request flow](./diagrams/compute/aws-ec2-ha-sequence.md)
+- [EKS deployment and request flow](./diagrams/compute/aws-eks-sequence.md)
+- [Serverless request and event flow](./diagrams/compute/aws-serverless-sequence.md)
+- [Event-driven order processing](./diagrams/integration/aws-event-driven-sequence.md)
+- [Multi-region failover and recovery](./diagrams/reliability/aws-multi-region-failover-sequence.md)

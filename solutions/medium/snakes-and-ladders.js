@@ -26,8 +26,8 @@ function snakesAndLadders(board) {
   const visited = new Set([1]);
   const queue = [[1, 0]]; // [position, rolls]
 
-  while (queue.length) {
-    const [pos, rolls] = queue.shift();
+  for (let head = 0; head < queue.length; head++) {
+    const [pos, rolls] = queue[head];
     for (let dice = 1; dice <= 6; dice++) {
       let next = pos + dice;
       if (next > target) continue;

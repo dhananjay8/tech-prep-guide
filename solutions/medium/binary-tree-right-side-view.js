@@ -18,12 +18,13 @@ function rightSideView(root) {
 
   const result = [];
   const queue = [root];
+  let head = 0;
 
-  while (queue.length) {
-    const levelSize = queue.length;
+  while (head < queue.length) {
+    const levelSize = queue.length - head;
 
     for (let i = 0; i < levelSize; i++) {
-      const node = queue.shift();
+      const node = queue[head++];
 
       // Last node in current level is visible from the right
       if (i === levelSize - 1) result.push(node.val);

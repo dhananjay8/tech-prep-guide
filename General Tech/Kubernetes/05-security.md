@@ -24,44 +24,74 @@ rules:
     resources: ["pods"]
     verbs: ["get", "list", "watch"]
 ---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
+metadata: { namespace: prod, name: pod-reader }
 subjects: [{ kind: User, name: alice }]       # or ServiceAccount/Group
-roleRef: { kind: Role, name: pod-reader }
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pod-reader
 ```
 
 Rules: **verb × resource** granularity (`get` vs `list` differ); `secrets` access is the crown jewel — audit it; avoid `*` wildcards and `cluster-admin` in production.
 
 ## 3. ServiceAccounts & Projected Bound Tokens (`TokenRequest` API)
 
-Every pod has an SA token (default SA = useless baseline). Create dedicated SAs per app → bind Roles to them. `automountServiceAccountToken: false` when the app doesn't call the API. On AWS, **IRSA** (or **EKS Pod Identity**) maps SA→IAM role (no node-level AWS keys).
+Pods use the namespace's default ServiceAccount unless another is selected.
+Create a dedicated ServiceAccount for each app and grant only the permissions
+it needs. Set `automountServiceAccountToken: false` when the app does not call
+the Kubernetes API. On AWS, **IRSA** or **EKS Pod Identity** can map a
+ServiceAccount to an IAM role without placing long-lived AWS keys on the node.
 
-- **Legacy Secret Tokens vs Modern Bound Projected Tokens (`v1.22+` / `v1.24+`)**:
-  - **Old (<1.21)**: K8s created a permanent `Secret` per ServiceAccount with a **non-expiring JWT**. If leaked, valid forever.
-  - **Modern (`TokenRequest` API + `ServiceAccountToken` projected volume)**: kubelet mounts a **time-bound (~1h expiry), audience-scoped, pod-bound OIDC JWT** and rotates it automatically before expiry; invalidated immediately when the Pod is deleted.
+- **Legacy token Secrets:** Before Kubernetes v1.22, Pods typically received
+  long-lived ServiceAccount tokens from Secrets. Kubernetes stopped creating
+  these Secrets automatically by default in v1.24, but they can still be
+  created manually and should generally be avoided.
+- **Projected bound tokens:** Kubernetes v1.22 and later use short-lived,
+  automatically rotated tokens by default. A projected token can be scoped
+  to an audience and bound to a Pod; deleting the Pod invalidates its token.
 
 ## 4. securityContext — the Interview Checklist
 
 ```yaml
-securityContext:                        # pod-level
-  runAsNonRoot: true
-  runAsUser: 1000
-  fsGroup: 2000
-  seccompProfile: { type: RuntimeDefault }
-containers:
-  - name: app
-    securityContext:                    # container-level
-      allowPrivilegeEscalation: false   # no setuid
-      readOnlyRootFilesystem: true      # needs /tmp as emptyDir volume
-      capabilities: { drop: [ALL] }     # add back only what's needed, e.g. NET_BIND_SERVICE
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app
+  namespace: prod
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 2000
+    seccompProfile: { type: RuntimeDefault }
+  containers:
+    - name: app
+      image: example/app:1.0
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities: { drop: [ALL] }
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+  volumes:
+    - name: tmp
+      emptyDir: {}
 ```
 
-## 5. Pod Security Standards (PSS replaced PSP, deprecated v1.21, removed v1.25)
+## 5. Pod Security Admission and Standards
+
+Pod Security Admission enforces the Pod Security Standards (PSS). The older
+PodSecurityPolicy (PSP) feature was deprecated in Kubernetes v1.21 and
+removed in v1.25.
 
 | Level | Enforcement | Use |
 | ------- | ------------- | ----- |
-| `privileged` | None | kube-system, CNI agents |
-| `baseline` | Blocks obvious escalation (hostPID, hostNetwork, privileged) | Default for normal workloads |
-| `restricted` | + runAsNonRoot, drop ALL caps, seccomp, RO-rootfs | Prod apps, multi-tenant |
+| `privileged` | No restrictions | System components that need them; avoid for app workloads |
+| `baseline` | Blocks common escalation paths (hostPID, hostNetwork, privileged) | Safer baseline for general workloads |
+| `restricted` | Requires controls such as non-root, dropped capabilities, and seccomp | Production and multi-tenant apps |
 
 ```bash
 kubectl label ns prod pod-security.kubernetes.io/enforce=restricted
@@ -78,7 +108,8 @@ kubectl label ns prod pod-security.kubernetes.io/enforce=restricted
 
 - **Admission controllers**: built-in (LimitRanger, PodSecurity, ResourceQuota) + dynamic webhooks — **OPA/Gatekeeper** (Rego DSL) or **Kyverno** (YAML-native) for policy-as-code ("no :latest", "must have resource limits", "only trusted registries").
 - **CEL `ValidatingAdmissionPolicy` (GA in v1.30)**: Compiles Common Expression Language (`object.spec.containers.all(c, !c.image.endsWith(':latest'))`) **in-process inside `kube-apiserver`** — zero external webhook network hop, zero webhook pod crash blocking cluster deployments!
-- **seccomp**: syscall allowlist — `seccompProfile: RuntimeDefault` blocks ~44 dangerous syscalls (`kexec_load`, `reboot`, `bpf`) out of ~300+ Linux syscalls for free.
+- **seccomp**: `seccompProfile: RuntimeDefault` applies the container runtime's
+  default syscall restrictions. The exact profile depends on the runtime.
 - **AppArmor/SELinux**: MAC confinement at node level (`annotations` / `securityContext.appArmorProfile`).
 - **Sandboxed runtimes (`RuntimeClass`)**: **gVisor (`runsc`)** (user-space kernel intercepting syscalls) or **Kata Containers / Firecracker** (lightweight microVM per pod) for untrusted multi-tenant code execution.
 - **Runtime detection**: Falco / Cilium Tetragon (eBPF) → alert or kill on shells spawned in pods (`execve /bin/sh`), sensitive file reads (`/etc/shadow`), crypto miners, or unexpected outbound connections.

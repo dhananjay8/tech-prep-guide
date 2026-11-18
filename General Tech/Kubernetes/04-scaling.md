@@ -4,11 +4,11 @@
 
 | | HPA | VPA | Cluster Autoscaler | Karpenter |
 | --- | ----- | ----- | -------------------- | ----------- |
-| Scales | Pod **count** | Pod **size** (requests) | **Node count** | Node count (better/faster) |
-| Driven by | Metrics (CPU/mem/custom) | Historical usage → recommends/updates | **Unschedulable pods** / underutilization | Same trigger, provisions right-sized nodes fast |
-| Restart pods? | No | Yes (on apply) | No (pods move on scale-down) | Moves pods to consolidate |
-| Ownership | Kubernetes SIG | Kubernetes SIG | Cloud-provided | AWS-origin, now upstream-ized |
-| Use when | Load is variable, app is stateless | Pods over/under-requested | HPA alone stalls on capacity | Faster/cheaper node provisioning than CA |
+| Scales | Pod **count** | Pod **size** (requests) | **Node count** | Node count |
+| Driven by | Metrics (CPU/mem/custom) | Historical usage → recommends/updates | **Unschedulable pods** / underutilization | Unschedulable pods; provisions from workload constraints |
+| Restart pods? | No | Sometimes; depends on update mode and support | May evict pods during scale-down | May evict pods during consolidation |
+| Ownership | Kubernetes SIG | Kubernetes SIG | Cloud/provider integrations | Open-source project with provider-specific integrations |
+| Use when | Load is variable, app is stateless | Pods over/under-requested | HPA alone stalls on capacity | Provision from workload constraints and consolidate underused nodes |
 
 **Avoid-when cheatsheet**: HPA—no when app is stateful/single-replica or metrics lie (JVM warmup); VPA—don't mix with HPA on the *same* metric (CPU/mem) — combine VPA(memory recommendations) + HPA(custom metrics) or use VPA in recommendation-only mode; CA/Karpenter—pods with local storage/PDB constraints block node drains.
 
@@ -19,6 +19,8 @@
 ```yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
+metadata:
+  name: api
 spec:
   scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: api }
   minReplicas: 2
@@ -51,21 +53,34 @@ spec:
 
 ## 3. VPA — Vertical Pod Autoscaler & In-Place Pod Resize
 
-Modes: `Off` (recommend only — safest), `Initial` (on pod create), `Auto`/`Recreate` (evicts pods to apply). Right-sizes requests/limits from observed usage; pairs with `LimitRange`. **Don't use Auto on singletons** without PDBs — it evicts to apply.
+Modes include `Off` (recommendations only), `Initial` (apply when a Pod is
+created), and `Recreate` (evict and replace the Pod). Supported VPA versions
+also offer `InPlaceOrRecreate`, which tries an in-place resize and falls back
+to recreating the Pod when needed. Check the installed VPA and Kubernetes
+versions before relying on in-place updates. Right-size requests and limits
+from observed usage; use a `LimitRange` to set namespace defaults and bounds.
+Avoid eviction-based updates on single-replica workloads unless availability
+is protected.
 
-- **In-Place Pod Vertical Scaling (`v1.27+` alpha / `v1.32+` beta)**: Historically, changing `resources.requests`/`limits` required deleting and recreating the Pod. Now pods can declare `resizePolicy` per resource (`cpu: NotRequired`, `memory: RestartContainer`), allowing kubelet to update Linux cgroup CPU/memory limits **in-place without pod eviction or IP change**.
+- **In-place Pod resize:** Kubernetes introduced the feature as alpha in
+  v1.27, beta in v1.33, and stable in v1.35. On supported clusters, the kubelet
+  can change CPU or memory resources without replacing the Pod. The container's
+  `resizePolicy` affects whether a container restart is needed; if a resize
+  cannot be applied in place, VPA may recreate the Pod instead.
 
 ## 4. Cluster Autoscaler & Karpenter
 
-- **CA** sequence: pending pod (no node fits) → pick a node-group template → grow ASG/MIG → pod schedules. Scale-down: node < threshold utilization (default ~50%) for ~10m → taint, drain respecting **PDBs** → terminate.
+- **CA** sequence: pending pod (no node fits) → pick a node-group template → grow ASG/MIG → pod schedules. Scale-down: a node stays below the utilization threshold (often around 50% for about 10 minutes, but configurable) → drain respecting **PDBs** → terminate.
 - **Blocks**: pods with local storage/emptyDir-as-state, strict PDBs, pods without controllers, pod anti-affinity pinning.
-- **Karpenter**: skips node groups — directly launches the cheapest right-sized instance for pending pods; consolidates/terminates idle nodes; faster + better bin-packing, but AWS-led and cloud-coupled.
+- **Karpenter**: its AWS provider can provision nodes directly from workload constraints without preconfigured autoscaling groups. It can consolidate underused nodes; instance selection follows the configured constraints and provider, not a guarantee to choose the cheapest option.
 
 ## 5. PodDisruptionBudget
 
 ```yaml
 apiVersion: policy/v1
 kind: PodDisruptionBudget
+metadata:
+  name: api
 spec:
   minAvailable: 2                    # or maxUnavailable: 1
   selector: { matchLabels: { app: api } }

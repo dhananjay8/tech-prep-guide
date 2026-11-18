@@ -1,0 +1,107 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="aws-serverless-lambda" name="Architecture">
+    <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="0" page="1" pageScale="1" pageWidth="1400" pageHeight="684" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="banner" parent="1" vertex="1" value="Serverless web application&#10;CloudFront routes static assets and API requests to different origins." style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=10;fillColor=#172c43;strokeColor=none;spacingLeft=24;align=left;fontSize=18;fontColor=#ffffff;">
+          <mxGeometry x="24" y="20" width="1352" height="102" as="geometry" />
+        </mxCell>
+        <mxCell id="takeaway" parent="1" vertex="1" value="DESIGN NOTE SQS redrives failed messages to a DLQ; workers need bounded retries and idempotent handlers." style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=16;fillColor=#eaf0f7;strokeColor=none;spacingLeft=15;align=left;fontSize=13;fontColor=#28425e;fontSize=13;">
+          <mxGeometry x="24" y="626" width="1352" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="runtime" parent="1" vertex="1" value="01   SYNCHRONOUS TRAFFIC  /  PUBLIC EDGE AND AWS-MANAGED SERVICES" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#d48a38;fontColor=#87440c;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="24" y="140" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="users" parent="runtime" vertex="1" value="End users&#10;Route 53 resolves edge&#10;DNS" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge" parent="runtime" vertex="1" value="CloudFront + WAF&#10;Behaviors route by path" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="247" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="api" parent="runtime" vertex="1" value="API Gateway&#10;Auth and throttling" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="470" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="fn" parent="runtime" vertex="1" value="Lambda API&#10;VPC-attached for private&#10;data" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="693" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ddb" parent="runtime" vertex="1" value="DynamoDB&#10;Managed service; outside&#10;VPC" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#f5eff8;strokeColor=#a889b7;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="916" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="static" parent="runtime" vertex="1" value="Private S3 REST origin&#10;Static assets via OAC" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#f5eff8;strokeColor=#a889b7;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="1139" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-users-edge" parent="runtime" edge="1" source="users" target="edge" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-edge-api" parent="runtime" edge="1" source="edge" target="api" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-api-fn" parent="runtime" edge="1" source="api" target="fn" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-fn-ddb" parent="runtime" edge="1" source="fn" target="ddb" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-edge-static" parent="runtime" edge="1" source="edge" target="static" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.5;exitY=1;entryX=0.5;entryY=1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="341" y="126" />
+              <mxPoint x="1233" y="126" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="private" parent="1" vertex="1" value="02   PRIVATE DATABASE PATH  /  VPC SUBNETS" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#a889b7;fontColor=#634374;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="24" y="295" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="vpc_fn" parent="private" vertex="1" value="Lambda VPC attachment&#10;Private subnet network&#10;access" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="proxy" parent="private" vertex="1" value="RDS Proxy&#10;Connection pooling" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="247" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="aurora" parent="private" vertex="1" value="Aurora Serverless v2&#10;Private database" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#f5eff8;strokeColor=#a889b7;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="470" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="redis" parent="private" vertex="1" value="ElastiCache&#10;Optional private cache" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#f5eff8;strokeColor=#a889b7;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="916" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-vpc_fn-proxy" parent="private" edge="1" source="vpc_fn" target="proxy" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-proxy-aurora" parent="private" edge="1" source="proxy" target="aurora" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="async" parent="1" vertex="1" value="03   BACKGROUND WORK  /  INDEPENDENT OF THE SYNCHRONOUS RESPONSE" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#609e89;fontColor=#215f4c;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="24" y="450" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="producer" parent="async" vertex="1" value="Lambda API&#10;Enqueue durable work" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="jobs" parent="async" vertex="1" value="Amazon SQS&#10;Visibility timeout +&#10;retry" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="247" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="worker" parent="async" vertex="1" value="Lambda worker&#10;Processes messages" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="470" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="dead" parent="async" vertex="1" value="SQS dead-letter queue&#10;Inspect and safely&#10;redrive" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="916" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-producer-jobs" parent="async" edge="1" source="producer" target="jobs" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-jobs-worker" parent="async" edge="1" source="jobs" target="worker" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-jobs-dead" parent="async" edge="1" source="jobs" target="dead" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#aa641e;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.5;exitY=1;entryX=0.5;entryY=1;dashed=1;dashPattern=5 4;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="341" y="126" />
+              <mxPoint x="1010" y="126" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

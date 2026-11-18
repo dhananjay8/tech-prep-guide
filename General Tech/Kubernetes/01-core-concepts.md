@@ -90,7 +90,7 @@ spec:
 
 ### Resources → QoS (memorize the pairing)
 
-**Requests** feed the *scheduler*; **limits** feed the *enforcer*. CPU over-limit → throttled; memory over-limit → OOMKilled (137). The requests/limits combo assigns a **QoS class** — Guaranteed (`req==lim`) / Burstable / BestEffort — which is also the **eviction order** under node pressure. Deep dive: `11-advanced-concepts.md §2`.
+**Requests** feed the *scheduler*; **limits** feed the *enforcer*. CPU over-limit → throttled; memory over-limit → OOMKilled (137). QoS is **Guaranteed** when every container has CPU and memory requests and limits set to equal values, **Burstable** when at least one request or limit is set, and **BestEffort** when none are set. QoS affects eviction priority under node pressure. Deep dive: `11-advanced-concepts.md §2`.
 
 ### Other spec fields interviewers ask about
 
@@ -112,20 +112,35 @@ spec:
 
 ```yaml
 # Deployment with safe rollout defaults
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  labels: { app: myapp }
 spec:
   replicas: 3
+  selector:
+    matchLabels: { app: myapp }
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1          # extra pods allowed during rollout
       maxUnavailable: 0    # never drop below replicas
+  template:
+    metadata:
+      labels: { app: myapp }
+    spec:
+      containers:
+        - name: app
+          image: myapp:1.0
 ```
 
 ```bash
-kubectl apply -f deploy.yaml | kubectl rollout status deploy/myapp
+kubectl apply -f deploy.yaml
+kubectl rollout status deployment/myapp --timeout=5m
 kubectl set image deploy/myapp app=myapp:2.0      # trigger rollout
 kubectl rollout history deploy/myapp              # revisions
-kubectl rollout undo deploy/myapp [--to-revision=3]
+kubectl rollout undo deploy/myapp --to-revision=3
 kubectl scale deploy/myapp --replicas=5
 ```
 
@@ -133,13 +148,15 @@ kubectl scale deploy/myapp --replicas=5
 
 ## 4. Service — Stable Endpoint for Ephemeral Pods
 
-Pods die and get new IPs; a **Service** gives a stable ClusterIP + DNS + load-balancing via kube-proxy → **Endpoints** (pods matching the selector **and** passing readiness).
+Pods die and get new IPs; a **Service** gives a stable ClusterIP and DNS.
+The cluster dataplane routes traffic to ready Pods listed in **EndpointSlices**
+(or the legacy Endpoints API).
 
 | Type | Scope | Details |
 | ------ | ------- | --------- |
 | **ClusterIP** (default) | In-cluster only | `svc.ns.svc.cluster.local` |
 | **NodePort** | External via node IP | Static port **30000–32767** on every node (`--service-node-port-range` to change) |
-| **LoadBalancer** | External via cloud LB | Builds on NodePort; gets `externalIP` |
+| **LoadBalancer** | External via a provider load balancer | Reports an external IP or hostname; NodePorts are commonly allocated but can be disabled when the provider supports direct routing |
 | **ExternalName** | DNS CNAME | Alias to an external host; no proxying |
 | **Headless** (`clusterIP: None`) | DNS → pod IPs directly | StatefulSets, client-side LB |
 

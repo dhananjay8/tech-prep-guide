@@ -5,8 +5,10 @@ An interview-focused guide to designing, operating, and explaining production Az
 ## Start Here
 
 - [Azure architecture interview guide](./Azure-Architecture-Interview-Guide.md) — AKS reference architecture, service choices, security, reliability, and interview drills.
-- [AKS enterprise architecture diagram](./Azure-AKS-Enterprise.drawio) — open with diagrams.net or the Draw.io editor.
-- [AKS deployment, request, and recovery sequences](./Azure-AKS-Sequence.md) — Mermaid diagrams that render in Markdown viewers that support Mermaid.
+- [Azure architecture diagram gallery](./diagrams/README.md) — interview scenarios organized by use case, with editable diagrams and previews.
+- [AKS enterprise architecture preview and notes](./diagrams/compute/Azure-AKS-Enterprise.md) — press `Cmd+Shift+V` in VS Code to view the PNG.
+- [Editable AKS diagram](./diagrams/compute/Azure-AKS-Enterprise.drawio) — open with diagrams.net or select Draw.io via **Reopen Editor With…** in VS Code.
+- [AKS deployment, request, and recovery sequences](./diagrams/compute/Azure-AKS-Sequence.md) — Mermaid diagrams that render in Markdown viewers that support Mermaid.
 - [Shared cloud architecture interview playbook](../Cloud-Architecture-Interview-Playbook.md) — a vendor-neutral way to structure system-design answers and compare AWS/Azure services.
 
 ## Recommended Study Path

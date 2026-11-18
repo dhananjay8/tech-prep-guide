@@ -8,19 +8,21 @@
  * Example: beginWord="hit", endWord="cog", wordList=["hot","dot","dog","lot","log","cog"] => 5
  *
  * Time Complexity: O(M^2 * N) where M is word length, N is word list size
- * Space Complexity: O(M^2 * N)
+ * Auxiliary Space: O(M * N) counting stored words by character;
+ * generated candidates are discarded unless enqueued.
  */
 
 // JavaScript Solution - BFS
 function ladderLength(beginWord, endWord, wordList) {
+  if (beginWord === endWord) return 1;
   const wordSet = new Set(wordList);
   if (!wordSet.has(endWord)) return 0;
 
   const queue = [[beginWord, 1]]; // [word, steps]
   const visited = new Set([beginWord]);
 
-  while (queue.length) {
-    const [word, steps] = queue.shift();
+  for (let head = 0; head < queue.length; head++) {
+    const [word, steps] = queue[head];
 
     for (let i = 0; i < word.length; i++) {
       for (let c = 97; c <= 122; c++) { // a-z
@@ -44,6 +46,7 @@ module.exports = ladderLength;
 from collections import deque
 
 def ladderLength(beginWord, endWord, wordList):
+    if beginWord == endWord: return 1
     word_set = set(wordList)
     if endWord not in word_set: return 0
     

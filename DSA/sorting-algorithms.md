@@ -9,14 +9,17 @@
 | **Insertion Sort** | O(n) | O(n²) | O(n²) | O(1) | ✅ | ✅ |
 | **Merge Sort** | O(n log n) | O(n log n) | O(n log n) | O(n) | ✅ | ❌ |
 | **Quick Sort** | O(n log n) | O(n log n) | O(n²) | O(log n) average, O(n) worst stack | ❌ | ✅ |
-| **Heap Sort** | O(n log n) | O(n log n) | O(n log n) | O(1) | ❌ | ✅ |
+| **Heap Sort** | O(n) on all-equal input | O(n log n) | O(n log n) | O(1) | ❌ | ✅ |
 | **Counting Sort** | O(n+k) | O(n+k) | O(n+k) | O(n+k) stable / O(k) variants | Implementation-dependent | ❌ |
 | **Radix Sort** | O(d(n+b)) | O(d(n+b)) | O(d(n+b)) | O(n+b) | Yes, with a stable digit sort | ❌ |
 
 `n` is the number of items; `k` is the key range for counting sort; `d` is
 the number of digits/passes and `b` is the radix/base. Counting and radix
 sorts are non-comparison sorts and need assumptions about key representation.
-The table describes common implementations, not every variant.
+The heap sort example stops sifting when neither child is larger. On all-equal
+input, heap construction and each extraction take O(1) sift work, so total time
+is O(n); worst-case time remains O(n log n). The table describes common
+implementations, not every variant.
 
 ---
 
@@ -166,12 +169,15 @@ function heapSort(arr) {
 }
 
 function heapify(arr, n, i) {
-  let largest = i, left = 2*i+1, right = 2*i+2;
-  if (left < n && arr[left] > arr[largest]) largest = left;
-  if (right < n && arr[right] > arr[largest]) largest = right;
-  if (largest !== i) {
+  while (true) {
+    let largest = i;
+    const left = 2 * i + 1;
+    const right = left + 1;
+    if (left < n && arr[left] > arr[largest]) largest = left;
+    if (right < n && arr[right] > arr[largest]) largest = right;
+    if (largest === i) return;
     [arr[i], arr[largest]] = [arr[largest], arr[i]];
-    heapify(arr, n, largest);
+    i = largest;
   }
 }
 ```
@@ -193,7 +199,7 @@ function binarySearch(arr, target) {
   return -1; // not found
 }
 
-// Find leftmost (first occurrence)
+// Lower bound: first index whose value is at least target
 function lowerBound(arr, target) {
   let lo = 0, hi = arr.length;
   while (lo < hi) {

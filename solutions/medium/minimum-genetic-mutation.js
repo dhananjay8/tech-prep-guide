@@ -6,20 +6,22 @@
  * Gene string is 8 chars of 'A','C','G','T'. Find min mutations from startGene to endGene.
  * Each mutation changes one char and must be in the gene bank.
  *
- * Time Complexity: O(n * 8 * 4)
- * Space Complexity: O(n)
+ * Let N be bank size and L = 8 be gene length.
+ * Time Complexity: O(N * L^2 * 4) = O(N) for this fixed-length problem.
+ * Space Complexity: O(N * L) = O(N) for fixed-length stored strings.
  */
 
 // JavaScript Solution — BFS (same as Word Ladder)
 function minMutation(startGene, endGene, bank) {
+  if (startGene === endGene) return 0;
   const bankSet = new Set(bank);
   if (!bankSet.has(endGene)) return -1;
 
   const queue = [[startGene, 0]];
   const visited = new Set([startGene]);
 
-  while (queue.length) {
-    const [gene, steps] = queue.shift();
+  for (let head = 0; head < queue.length; head++) {
+    const [gene, steps] = queue[head];
     for (let i = 0; i < 8; i++) {
       for (const ch of 'ACGT') {
         const mutated = gene.slice(0, i) + ch + gene.slice(i + 1);
@@ -42,6 +44,7 @@ module.exports = minMutation;
 from collections import deque
 
 def minMutation(startGene, endGene, bank):
+    if startGene == endGene: return 0
     bank_set = set(bank)
     if endGene not in bank_set: return -1
     

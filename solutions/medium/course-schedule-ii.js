@@ -26,8 +26,9 @@ function findOrder(numCourses, prerequisites) {
   }
 
   const order = [];
-  while (queue.length) {
-    const node = queue.shift();
+  let head = 0;
+  while (head < queue.length) {
+    const node = queue[head++];
     order.push(node);
 
     for (const neighbor of graph[node]) {

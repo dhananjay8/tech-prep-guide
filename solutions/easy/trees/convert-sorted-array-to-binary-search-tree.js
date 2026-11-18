@@ -41,9 +41,10 @@ function treeToArray(root) {
     if (!root) return [];
     const result = [];
     const queue = [root];
+    let head = 0;
     
-    while (queue.length > 0) {
-        const node = queue.shift();
+    while (head < queue.length) {
+        const node = queue[head++];
         if (node) {
             result.push(node.val);
             queue.push(node.left, node.right);

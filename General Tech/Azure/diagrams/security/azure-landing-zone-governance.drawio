@@ -1,0 +1,70 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="azure-landing-zone-governance" name="Architecture">
+    <mxGraphModel grid="1" gridSize="10" guides="1" connect="1" arrows="1" page="1" pageWidth="1400" pageHeight="684" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="banner" parent="1" vertex="1" value="Azure landing zone and governance&#10;How would you let product teams deploy safely across hundreds of Azure subscriptions?" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=10;fillColor=#172c43;strokeColor=none;fontColor=#ffffff;fontSize=18;align=left;spacingLeft=24;">
+          <mxGeometry x="24" y="20" width="1352" height="102" as="geometry" />
+        </mxCell>
+        <mxCell id="lane0" parent="1" vertex="1" value="ORGANIZATION  /  MANAGEMENT GROUPS AND SUBSCRIPTIONS" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;swimlane;startSize=30;rounded=1;collapsible=0;container=1;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#d48a38;fontColor=#28425e;fontSize=12;fontStyle=1;align=left;spacingLeft=14;">
+          <mxGeometry x="24" y="140" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="c0-0" parent="lane0" vertex="1" value="Tenant root" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="76" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c0-1" parent="lane0" vertex="1" value="Management groups" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="326" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c0-2" parent="lane0" vertex="1" value="Platform subscriptions" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="576" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c0-3" parent="lane0" vertex="1" value="Landing-zone&#10;subscriptions" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="826" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c0-4" parent="lane0" vertex="1" value="Workload resources" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="1076" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lane1" parent="1" vertex="1" value="GUARDRAILS  /  POLICY DOES NOT GRANT ACCESS" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;swimlane;startSize=30;rounded=1;collapsible=0;container=1;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#83a6ce;fontColor=#28425e;fontSize=12;fontStyle=1;align=left;spacingLeft=14;">
+          <mxGeometry x="24" y="295" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="c1-0" parent="lane1" vertex="1" value="Azure Policy&#10;audit or deny" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="76" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c1-1" parent="lane1" vertex="1" value="Entra groups" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="326" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c1-2" parent="lane1" vertex="1" value="Azure RBAC" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="576" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c1-3" parent="lane1" vertex="1" value="PIM elevation" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="826" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c1-4" parent="lane1" vertex="1" value="Scoped deployment" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="1076" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lane2" parent="1" vertex="1" value="OPERATIONS  /  OWNER AND EVIDENCE" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;swimlane;startSize=30;rounded=1;collapsible=0;container=1;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#609e89;fontColor=#28425e;fontSize=12;fontStyle=1;align=left;spacingLeft=14;">
+          <mxGeometry x="24" y="450" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="c2-0" parent="lane2" vertex="1" value="Subscription vending" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="76" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c2-1" parent="lane2" vertex="1" value="Central diagnostics" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="326" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c2-2" parent="lane2" vertex="1" value="Budget + tags" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="576" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c2-3" parent="lane2" vertex="1" value="Policy exceptions" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="826" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c2-4" parent="lane2" vertex="1" value="Continuous review" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="1076" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="foot" parent="1" vertex="1" value="DESIGN NOTE    Each lane is a separate view; see the interview discussion for trade-offs and failure handling." style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=16;fillColor=#eaf0f7;strokeColor=none;fontColor=#28425e;fontSize=13;align=left;spacingLeft=15;">
+          <mxGeometry x="24" y="626" width="1352" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

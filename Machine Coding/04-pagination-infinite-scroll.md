@@ -7,6 +7,10 @@
 - Loading states, error handling
 - Deduplication of results
 
+The examples use React hooks and assume an API returns `{ items, totalPages }`
+for page controls and `{ items, hasMore }` for infinite scroll. Item IDs must
+be stable.
+
 ## Pagination Implementation
 
 ```javascript
@@ -14,8 +18,9 @@ function PaginatedList() {
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -28,26 +33,36 @@ function PaginatedList() {
         });
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         const data = await res.json();
+        if (controller.signal.aborted) return;
         setItems(data.items);
         setTotalPages(data.totalPages);
       } catch (requestError) {
-        if (requestError.name !== 'AbortError') setError('Could not load this page.');
+        if (!controller.signal.aborted && requestError.name !== 'AbortError') {
+          setError('Could not load this page.');
+        }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
     };
     fetchData();
     return () => controller.abort();
-  }, [page]);
+  }, [page, retry]);
+
+  const retryPage = () => {
+    setError('');
+    setLoading(true);
+    setRetry(count => count + 1);
+  };
 
   return (
     <div>
-      {error && <p role="alert">{error}</p>}
-      {loading ? <Spinner /> : items.map(item => <ItemCard key={item.id} item={item} />)}
+      {error && <p role="alert">{error} <button onClick={retryPage}>Retry</button></p>}
+      {loading && <Spinner />}
+      {!loading && !error && items.map(item => <ItemCard key={item.id} item={item} />)}
       <div className="pagination">
-        <button disabled={page === 1} onClick={() => setPage(p => p - 1)}>Prev</button>
-        <span>Page {page} of {totalPages}</span>
-        <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
+        <button disabled={loading || Boolean(error) || page <= 1} onClick={() => setPage(p => p - 1)}>Prev</button>
+        <span>{!loading && !error && totalPages === 0 ? 'No pages' : `Page ${page} of ${totalPages}`}</span>
+        <button disabled={loading || Boolean(error) || page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
       </div>
     </div>
   );
@@ -61,67 +76,71 @@ function InfiniteScrollList() {
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
-  const loadingRef = useRef(false);
-  const observerRef = useRef();
-
-  // Intersection Observer for detecting scroll to bottom
-  const lastItemRef = useCallback(node => {
-    if (observerRef.current) observerRef.current.disconnect();
-    if (loading || error) return;
-
-    observerRef.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore && !loadingRef.current) {
-        loadingRef.current = true;
-        setPage(p => p + 1);
-      }
-    });
-
-    if (node) observerRef.current.observe(node);
-  }, [loading, hasMore, error]);
+  const sentinelRef = useRef(null);
 
   useEffect(() => {
     const controller = new AbortController();
     const fetchData = async () => {
       setLoading(true);
       setError('');
-      loadingRef.current = true;
       try {
         const res = await fetch(`/api/items?page=${page}&limit=20`, {
           signal: controller.signal
         });
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         const data = await res.json();
+        if (controller.signal.aborted) return;
         setItems(prev => {
-          const existingIds = new Set(prev.map(item => item.id));
-          return [...prev, ...data.items.filter(item => !existingIds.has(item.id))];
+          const byId = new Map(prev.map(item => [item.id, item]));
+          for (const item of data.items) byId.set(item.id, item);
+          return [...byId.values()];
         });
-        setHasMore(data.items.length === 20);
+        setHasMore(data.hasMore);
       } catch (requestError) {
-        if (requestError.name !== 'AbortError') setError('Could not load more results.');
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-          loadingRef.current = false;
+        if (!controller.signal.aborted && requestError.name !== 'AbortError') {
+          setError('Could not load more results.');
         }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
     fetchData();
     return () => controller.abort();
   }, [page, retry]);
 
+  useEffect(() => {
+    if (loading || error || !hasMore || !sentinelRef.current) return;
+    let active = true;
+    const observer = new IntersectionObserver(entries => {
+      if (!active || !entries.some(entry => entry.isIntersecting)) return;
+      active = false;
+      observer.disconnect();
+      setLoading(true);
+      setPage(current => current + 1);
+    });
+    observer.observe(sentinelRef.current);
+    return () => {
+      active = false;
+      observer.disconnect();
+    };
+  }, [loading, error, hasMore, page]);
+
+  const retryPage = () => {
+    setError('');
+    setLoading(true);
+    setRetry(count => count + 1);
+  };
+
   return (
     <div>
       {error && <p role="alert">{error}</p>}
-      {items.map((item, i) => (
-        <div key={item.id} ref={i === items.length - 1 ? lastItemRef : null}>
-          <ItemCard item={item} />
-        </div>
-      ))}
+      {items.map(item => <ItemCard key={item.id} item={item} />)}
+      {hasMore && <div ref={sentinelRef} aria-hidden="true" style={{ height: 1 }} />}
       {loading && <Spinner />}
-      {error && <button onClick={() => setRetry(count => count + 1)}>Retry</button>}
+      {error && <button onClick={retryPage}>Retry</button>}
     </div>
   );
 }
@@ -134,7 +153,9 @@ function InfiniteScrollList() {
 - **Virtualization**: Only render visible items (react-window/react-virtualized) for large lists
 - For infinite scroll, abort on unmount/query change and prevent concurrent page requests.
 - Reset the page or cursor when filters change; deduplicate appended records by stable ID.
+- Use the server's `hasMore` flag so short pages do not incorrectly terminate the list. The API must eventually return `hasMore: false`; avoid returning empty pages with `hasMore: true` indefinitely.
 - Provide an explicit retry action and announce loading/results for keyboard and screen-reader users.
+- A visible **Load more** button is a useful alternative or fallback when automatic observation is not desirable.
 
 ## Interview Tips
 

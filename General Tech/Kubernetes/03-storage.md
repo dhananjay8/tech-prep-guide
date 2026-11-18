@@ -34,7 +34,7 @@ StorageClass (provisioner + params + reclaimPolicy)
 | **RWO** | One node read-write | EBS (block) — the default answer |
 | **ROX** | Many nodes read-only | Shared data/artifacts |
 | **RWX** | Many nodes read-write | EFS/NFS/filestore — shared filesystems |
-| **RWOP** | Single pod read-write (v1.22+) | Strongest guarantee for stateful apps |
+| **RWOP** | Single Pod read-write; stable in v1.29+ and requires CSI support | Strongest single-Pod access guarantee |
 
 | Reclaim policy | On PVC delete |
 | ---------------- | --------------- |
@@ -57,18 +57,38 @@ volumeBindingMode: WaitForFirstConsumer
 ## 4. StatefulSet Storage Pattern
 
 ```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
 spec:
-  serviceName: postgres              # headless svc → stable DNS: pod-0.postgres
+  clusterIP: None
+  selector: { app: postgres }
+  ports: [{ name: db, port: 5432, targetPort: 5432 }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres              # matching headless Service
   replicas: 3
+  selector:
+    matchLabels: { app: postgres }
   template:
+    metadata:
+      labels: { app: postgres }
     spec:
-      containers: [{ name: pg, image: postgres:16,
-                     volumeMounts: [{ name: data, mountPath: /var/lib/postgresql/data }] }]
-  volumeClaimTemplates:              # THE key field: one PVC per pod, named data-postgres-N
+      containers:
+        - name: pg
+          image: postgres:16
+          ports: [{ name: db, containerPort: 5432 }]
+          volumeMounts: [{ name: data, mountPath: /var/lib/postgresql/data }]
+  volumeClaimTemplates:              # one PVC per Pod: data-postgres-0, etc.
     - metadata: { name: data }
       spec:
         accessModes: [ReadWriteOnce]
-        storageClassName: gp3
+        storageClassName: fast        # use a StorageClass available in the cluster
         resources: { requests: { storage: 20Gi } }
 ```
 

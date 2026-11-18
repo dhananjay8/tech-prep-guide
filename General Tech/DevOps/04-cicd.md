@@ -120,8 +120,6 @@ the main branch healthy; stop and investigate when it turns red.
 
 ### Helm and Kubernetes do different jobs
 
-| Tool | Role | Analogy |
-| --- | --- | --- |
 | Tool | What it does |
 | --- | --- |
 | **Helm** | Fills in chart templates and creates Kubernetes settings |
@@ -158,8 +156,6 @@ as the Pods.
 
 ## 5. Deployment Strategies
 
-| Strategy | Mechanism | Rollback | Cost | Best for |
-| ---------- | ----------- | ---------- | ------ | ---------- |
 | Strategy | How it works | Good for |
 | --- | --- | --- |
 | **Rolling** | Replace Pods a few at a time | Most stateless services |

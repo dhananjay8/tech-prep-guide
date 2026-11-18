@@ -16,16 +16,16 @@ L7 Reverse Proxy / Load Balancer (HTTP/gRPC — Nginx, HAProxy mode http, Envoy,
 | Feature | **Nginx** | **HAProxy** | **Envoy** | **AWS ALB / NLB** |
 | --- | --- | --- | --- | --- |
 | **Origins / Sweet Spot** | Web server (static files) + L7 reverse proxy + K8s Ingress | Pure high-perf L4/L7 load balancer & TCP/HTTP routing | Cloud-native L4/L7 proxy, **xDS dynamic API**, Service Mesh data plane | Managed cloud edge LB (ALB=L7, NLB=L4) |
-| **Config Reload** | `nginx -s reload` forks new worker processes, drains old workers (careful: high reload churn in K8s drops long connections!) | Hitless reload (`-sf` socket transfer) + Runtime Socket API for dynamic backend weight/state changes | **100% dynamic via xDS gRPC API** — zero process reloads when K8s endpoints change | Managed via AWS API / ALB Controller |
-| **Observability** | Basic stub_status (OSS); rich metrics in Nginx Plus / Prometheus exporter | Built-in HTML/CSV stats page + Prometheus endpoint (`/metrics` natively since 2.0) | First-class histograms, distributed tracing (OpenTelemetry), L7 gRPC/HTTP stats out-of-the-box | CloudWatch metrics + S3 access logs |
+| **Config Reload** | `nginx -s reload` starts new workers and lets old workers drain; frequent reloads can leave old workers around when connections are long-lived | Hitless reload (`-sf` socket transfer) + Runtime Socket API for dynamic backend weight/state changes | **Dynamic updates via xDS** for supported configuration, without a process reload | Managed via AWS API / ALB Controller |
+| **Observability** | Basic stub_status (OSS); richer metrics in Nginx Plus or through an exporter | Built-in HTML/CSV stats page; Prometheus exporter is available in current versions when enabled and configured | Histograms, distributed tracing (OpenTelemetry), and L7 gRPC/HTTP stats | CloudWatch metrics + S3 access logs |
 | **gRPC / HTTP/2** | Supported (`grpc_pass`), less dynamic circuit-breaking | Full HTTP/2 + gRPC, ultra-fast ACLs + stick-tables | **Best-in-class gRPC**, outlier detection, circuit breaking, retry budgets, shadowing | ALB supports gRPC target groups |
-| **Choose when** | Serving static assets + reverse proxy + standard K8s Ingress | Extreme L4/L7 throughput, TCP DB load balancing (PgBouncer/Galera/Redis), fine ACL/stick-table rate-limiting | Service mesh sidecar/gateway (Istio/Cilium/Contour), dynamic microservice routing | Cloud edge termination on AWS |
+| **Choose when** | Serving static assets + reverse proxy + standard K8s Ingress | L4/L7 load balancing, TCP services, and ACL/stick-table rules | Envoy-based proxying or service-mesh data plane; Cilium provides separate eBPF networking/mesh features | Cloud edge termination on AWS |
 
 ---
 
 ## 2. Nginx — Architecture, Directives & Production Tuning
 
-### Event-Driven Architecture (Why Nginx Beats Apache `prefork` Under C10K+)
+### Event-Driven Architecture (Handling Many Concurrent Connections)
 
 - **Master process** (runs as `root` to bind port 80/443, reads/validates config, spawns/manages workers, never handles user traffic).
 - **Worker processes** (run as unprivileged `nginx` user, typically `worker_processes auto` = 1 per CPU core, pinned via `worker_cpu_affinity`).
@@ -67,7 +67,7 @@ http {
             limit_req zone=api_limit burst=40 nodelay;
 
             proxy_pass http://backend_api;
-            proxy_http_version 1.1;              # REQUIRED for upstream keepalive (default is HTTP/1.0!)
+            proxy_http_version 1.1;              # Explicit for compatibility; default changed in Nginx 1.29.7
             proxy_set_header Connection "";      # REQUIRED to clear "close" header for upstream keepalive
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
@@ -84,8 +84,8 @@ http {
 
 ### Top 3 Nginx Interview Traps
 
-1. **The Upstream Keepalive Trap**: By default, Nginx speaks **HTTP/1.0 with `Connection: close`** to upstreams — opening a brand-new TCP connection (and TLS handshake if HTTPS) to your backend on *every single request*, exhausting ephemeral ports (`TIME_WAIT`). Fix: add `keepalive 64;` inside `upstream {}` **AND** `proxy_http_version 1.1; proxy_set_header Connection "";` inside `location {}`.
-2. **The Static DNS Resolution Trap**: If you write `proxy_pass http://my-internal-alb.elb.amazonaws.com;`, Nginx resolves that DNS hostname **only once at startup/reload** and caches the IPs forever! When AWS rotates ALB IPs or K8s pods change, Nginx sends traffic to dead IPs (`502 Bad Gateway`). Fix: declare `resolver 10.96.0.10 valid=10s;` and store the hostname in a variable (`set $upstream "my-svc.ns.svc.cluster.local"; proxy_pass http://$upstream;`) to force dynamic TTL-based re-resolution.
+1. **The Upstream Keepalive Trap**: Upstream keepalive needs a reusable connection pool and compatible HTTP settings. Older Nginx versions defaulted to HTTP/1.0; current versions default to HTTP/1.1. Configure `keepalive` in the `upstream` block and, where required, set HTTP/1.1 and clear the `Connection` header in the location.
+2. **The Static DNS Resolution Trap**: A literal hostname in `proxy_pass` is commonly resolved when Nginx loads the configuration, not for every request. If the address can change, use a configured DNS resolver and a variable-based `proxy_pass`, or the `resolve` parameter in a shared-memory `upstream` block on a supported Nginx version. Verify the behavior for the version and DNS setup in use.
 3. **`location` Matching Priority Order**:
    1. `location = /exact` (exact match — stops immediately, fastest)
    2. `location ^~ /prefix` (preferential prefix — stops before regex evaluation)
@@ -98,7 +98,7 @@ http {
 
 ### Why SREs Love HAProxy
 
-- **Stick-Tables**: High-speed in-memory key-value tables built into the data plane that track per-IP/per-header sliding-window counters (`http_req_rate(10s)`, `http_err_rate(10s)`, `conn_cur`, `bytes_out_rate`) across active-active HAProxy peers — lets you tarpit or `429` abusive clients or bots at 1M+ RPS without touching Redis.
+- **Stick-Tables**: In-memory tables track per-IP or per-header counters such as request rate and concurrent connections. HAProxy can synchronize configured tables between peers, but that is not a strongly consistent global rate limiter. Benchmark the actual workload instead of assuming a fixed request rate.
 - **Granular Timeouts & Queuing**:
   - `timeout connect 3s` (TCP SYN to backend) · `timeout client 30s` · `timeout server 30s` · `timeout http-keep-alive 10s` · `timeout queue 5s`
   - **`maxconn` per backend server**: HAProxy can cap concurrent connections sent to each backend (`server app1 10.0.1.10:8080 check maxconn 100`) and queue excess requests inside HAProxy instead of melting down a thread-per-request backend (Ruby/Python/legacy Java).
@@ -341,9 +341,9 @@ When Istio/Envoy returns a `503`, the **Envoy Response Flag** in the access log 
 
 ## 8. Recall — Sound Bites
 
-- "Nginx defaults to HTTP/1.0 `Connection: close` on upstreams — add `keepalive` + `proxy_http_version 1.1` or drown in `TIME_WAIT`."
+- "Check the Nginx version and upstream HTTP settings before relying on keepalive; use a connection pool and measure connection churn."
 - "Backend keepalive timeout must ALWAYS be greater than the Load Balancer's idle timeout, or you get race-condition `502`s."
-- "Nginx caches upstream DNS at startup unless you use `resolver` + a `$variable` in `proxy_pass`."
-- "HAProxy stick-tables rate-limit abusive IPs in-memory at 1M+ RPS; Envoy xDS updates endpoints with zero process reloads."
+- "For changing upstream DNS, use a supported dynamic-resolution configuration and verify its behavior."
+- "HAProxy stick-tables support local rate controls; capacity and peer synchronization depend on configuration and workload."
 - "Istio: `Gateway` = edge door, `VirtualService` = routing rules, `DestinationRule` = subset/circuit-breaker policy after routing."
 - "Envoy access log flags: `UF` = connect/mTLS failed, `UC` = backend closed early (keepalive/SIGTERM race), `UO` = circuit breaker tripped."

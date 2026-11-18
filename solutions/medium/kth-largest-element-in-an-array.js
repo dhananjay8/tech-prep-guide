@@ -1,114 +1,39 @@
 /**
+ * Randomized three-way quickselect. Keep the region containing index k - 1
+ * in descending order; equal values are settled together.
+ * Expected time: O(n); worst case: O(n^2). Auxiliary space: O(1).
+ * Mutates nums. Assumes 1 <= k <= nums.length.
+ *
  * @param {number[]} nums
  * @param {number} k
  * @return {number}
  */
 var findKthLargest = function (nums, k) {
-  // Step 1: Sort the array in descending order
-  nums.sort((a, b) => b - a);
+  const target = k - 1;
+  let lo = 0;
+  let hi = nums.length - 1;
 
-  // Step 2: Return the Kth largest element
-  return nums[k - 1];
-};
+  while (lo <= hi) {
+    const pivot = nums[lo + Math.floor(Math.random() * (hi - lo + 1))];
+    let greater = lo;
+    let i = lo;
+    let smaller = hi;
 
-/**
- * @param {number[]} nums
- * @param {number} k
- * @return {number}
- */
-var findKthLargest = function (nums, k) {
-  // Find the smallest and largest values in the array
-  const minValue = Math.min(...nums); // Minimum value in nums
-  const maxValue = Math.max(...nums); // Maximum value in nums
-
-  // Create a frequency array (count) to store the occurrences of each number
-  // The size of the array is determined by the range of values: maxValue - minValue + 1
-  const count = new Array(maxValue - minValue + 1).fill(0);
-
-  // Fill the count array
-  // For each number in nums, increment its respective position in the count array
-  for (const num of nums) {
-    count[num - minValue]++; // Map num to count array index using `num - minValue`
-  }
-
-  // Iterate backward over the count array to find the kth largest element
-  let remaining = k; // Number of elements we need to find
-  for (let i = count.length - 1; i >= 0; i--) {
-    remaining -= count[i]; // Subtract the frequency of the current number from remaining
-
-    // If remaining becomes 0 or less, we've found the kth largest element
-    if (remaining <= 0) {
-      return i + minValue; // Map the index back to the original number using `i + minValue`
-    }
-  }
-};
-
-/**
- * @param {number[]} nums
- * @param {number} k
- * @return {number}
- */
-var findKthLargest = function (nums, k) {
-    const MinHeap = function () {
-      this.heap = [];
-    };
-  
-    MinHeap.prototype.push = function (val) {
-      this.heap.push(val);
-      this.heap.sort((a, b) => a - b);
-    };
-  
-    MinHeap.prototype.pop = function () {
-      return this.heap.shift();
-    };
-  
-    MinHeap.prototype.size = function () {
-      return this.heap.length;
-    };
-  
-    let heap = new MinHeap();
-  
-    for (let num of nums) {
-      heap.push(num);
-      if (heap.size() > k) {
-        heap.pop();
+    while (i <= smaller) {
+      if (nums[i] > pivot) {
+        [nums[greater], nums[i]] = [nums[i], nums[greater]];
+        greater++;
+        i++;
+      } else if (nums[i] < pivot) {
+        [nums[i], nums[smaller]] = [nums[smaller], nums[i]];
+        smaller--;
+      } else {
+        i++;
       }
     }
-  
-    return heap.heap[0];
-  };
 
-/**
- * @param {number[]} nums
- * @param {number} k
- * @return {number}
- */
-var findKthLargest = function (nums, k) {
-  const partition = (left, right) => {
-    const pivot = nums[right];
-    let partitionIndex = left;
-
-    for (let i = left; i < right; i++) {
-      if (nums[i] >= pivot) {
-        // Descending order comparison
-        [nums[i], nums[partitionIndex]] = [nums[partitionIndex], nums[i]];
-        partitionIndex++;
-      }
-    }
-    [nums[partitionIndex], nums[right]] = [nums[right], nums[partitionIndex]];
-    return partitionIndex;
-  };
-
-  let left = 0,
-    right = nums.length - 1;
-  while (true) {
-    const pivotIndex = partition(left, right);
-    if (pivotIndex === k - 1) {
-      return nums[pivotIndex];
-    } else if (pivotIndex < k - 1) {
-      left = pivotIndex + 1;
-    } else {
-      right = pivotIndex - 1;
-    }
+    if (target < greater) hi = greater - 1;
+    else if (target > smaller) lo = smaller + 1;
+    else return pivot;
   }
 };

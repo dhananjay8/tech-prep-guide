@@ -1,0 +1,103 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="Azure-AKS-Enterprise" name="Architecture">
+    <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="0" page="1" pageScale="1" pageWidth="1400" pageHeight="684" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="banner" parent="1" vertex="1" value="Azure AKS enterprise architecture&#10;A private origin connects the public edge to zone-spread AKS application workloads." style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=10;fillColor=#172c43;strokeColor=none;spacingLeft=24;align=left;fontSize=18;fontColor=#ffffff;">
+          <mxGeometry x="24" y="20" width="1352" height="102" as="geometry" />
+        </mxCell>
+        <mxCell id="takeaway" parent="1" vertex="1" value="DESIGN NOTE Zone-redundant PostgreSQL HA stays in one region. Plan and test regional recovery separately." style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=16;fillColor=#eaf0f7;strokeColor=none;spacingLeft=15;align=left;fontSize=13;fontColor=#28425e;fontSize=13;">
+          <mxGeometry x="24" y="626" width="1352" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="runtime" parent="1" vertex="1" value="01   REQUEST PATH  /  PRIVATE LINK TO THE WORKLOAD VNET" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#d48a38;fontColor=#87440c;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="24" y="140" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="users" parent="runtime" vertex="1" value="End users&#10;Public HTTPS" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="frontdoor" parent="runtime" vertex="1" value="Front Door Premium&#10;Global routing and WAF" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="247" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="link" parent="runtime" vertex="1" value="Private Link origin&#10;Approved private&#10;connection" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="470" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="gateway" parent="runtime" vertex="1" value="Internal load balancer&#10;Gateway API&#10;implementation" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="693" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pods" parent="runtime" vertex="1" value="Private AKS Pods&#10;Zone-spread node pools" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="916" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="database" parent="runtime" vertex="1" value="PostgreSQL Flexible&#10;Server&#10;Private; zone-redundant&#10;HA" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#f5eff8;strokeColor=#a889b7;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="1139" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-users-frontdoor" parent="runtime" edge="1" source="users" target="frontdoor" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-frontdoor-link" parent="runtime" edge="1" source="frontdoor" target="link" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-link-gateway" parent="runtime" edge="1" source="link" target="gateway" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-gateway-pods" parent="runtime" edge="1" source="gateway" target="pods" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-pods-database" parent="runtime" edge="1" source="pods" target="database" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="delivery" parent="1" vertex="1" value="02   DELIVERY  /  IMAGE PUBLISHING AND PRIVATE API ACCESS" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#83a6ce;fontColor=#2d5680;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="24" y="295" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="repo" parent="delivery" vertex="1" value="GitHub Actions&#10;Entra OIDC; private&#10;runner" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="registry" parent="delivery" vertex="1" value="Azure Container Registry&#10;Private endpoint + DNS" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="247" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="image" parent="delivery" vertex="1" value="Approved release&#10;Pin immutable image&#10;digest" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="470" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="runner" parent="delivery" vertex="1" value="VNet-connected runner&#10;Network path to private&#10;API" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="693" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="api" parent="delivery" vertex="1" value="Private AKS API&#10;Apply approved release" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="916" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kubelet" parent="delivery" vertex="1" value="AKS kubelet identity&#10;Pull image from private&#10;ACR" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="1139" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-repo-registry" parent="delivery" edge="1" source="repo" target="registry" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#426d9c;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;dashPattern=5 4;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-registry-image" parent="delivery" edge="1" source="registry" target="image" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#426d9c;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;dashPattern=5 4;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-image-runner" parent="delivery" edge="1" source="image" target="runner" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#426d9c;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;dashPattern=5 4;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-runner-api" parent="delivery" edge="1" source="runner" target="api" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#426d9c;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;dashPattern=5 4;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="controls" parent="1" vertex="1" value="03   SUPPORTING CONTROLS  /  NOT REQUEST HOPS" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#a3b1c3;fontColor=#405775;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="24" y="450" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="cache" parent="controls" vertex="1" value="Azure Managed Redis&#10;Optional cache with TTL" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#f5eff8;strokeColor=#a889b7;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="identity" parent="controls" vertex="1" value="Workload ID + Key Vault&#10;Separate app identity" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="247" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="network" parent="controls" vertex="1" value="Azure CNI Overlay&#10;Non-overlapping CIDRs" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="470" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="firewall" parent="controls" vertex="1" value="Azure Firewall or NAT&#10;Choose based on&#10;inspection" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="693" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="metrics" parent="controls" vertex="1" value="Azure Monitor&#10;Prometheus, logs, traces" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="916" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

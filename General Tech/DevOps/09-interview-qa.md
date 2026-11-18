@@ -9,13 +9,13 @@ Culture + practices combining development and operations to shorten the delivery
 Managing infra through declarative code — versioned, repeatable, auditable, testable. Terraform (multi-cloud), CloudFormation (AWS-only), Pulumi (real languages).
 
 **Q: Explain the CI/CD pipeline you've built.**
-Push → CI builds/tests/scans → Docker image tagged by SHA → push to registry → manifests repo updated → ArgoCD syncs to cluster → health/smoke checks → Slack notify. *(See `04-cicd.md` for the full flow and ops scenarios.)*
+Code change → CI tests and scans → build and publish a versioned OCI image → reviewed deployment settings select that image → deploy through a pull controller such as ArgoCD/Flux or an approved controlled runner → health and smoke checks → notify the team. *(See `04-cicd.md` for the full flow and deployment options.)*
 
 **Q: How do you handle a production incident?**
 Detect (alert) → triage (severity, comms channel) → **mitigate first** (rollback/scale/failover — don't debug in place) → root-cause → blameless postmortem with action items.
 
 **Q: Continuous Delivery vs Continuous Deployment?**
-Delivery = auto to staging, human gate to prod. Deployment = fully automated to prod. The gate is the difference.
+Continuous delivery keeps a tested change ready for release, often with a production approval step. Continuous deployment automatically promotes qualifying changes to production under defined rules.
 
 ---
 

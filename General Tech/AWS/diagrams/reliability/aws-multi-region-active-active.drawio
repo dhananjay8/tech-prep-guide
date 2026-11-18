@@ -1,0 +1,115 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="aws-multi-region-active-active" name="Architecture">
+    <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="0" page="1" pageScale="1" pageWidth="1400" pageHeight="730" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="banner" parent="1" vertex="1" value="Multi-Region active application tiers&#10;Both regions serve traffic. Each data store has separate replication and write semantics." style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=10;fillColor=#172c43;strokeColor=none;spacingLeft=24;align=left;fontSize=18;fontColor=#ffffff;">
+          <mxGeometry x="24" y="20" width="1352" height="102" as="geometry" />
+        </mxCell>
+        <mxCell id="takeaway" parent="1" vertex="1" value="DESIGN NOTE Aurora has one primary writer. Region B writes via the primary or degrades until promotion." style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=16;fillColor=#eaf0f7;strokeColor=none;spacingLeft=15;align=left;fontSize=13;fontColor=#28425e;fontSize=13;">
+          <mxGeometry x="24" y="672" width="1352" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="edge" parent="1" vertex="1" value="01   GLOBAL EDGE" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#d48a38;fontColor=#87440c;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="24" y="140" width="1352" height="124" as="geometry" />
+        </mxCell>
+        <mxCell id="users" parent="edge" vertex="1" value="Global users&#10;Route 53 resolves&#10;endpoint DNS" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="238" y="44" width="214" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="global" parent="edge" vertex="1" value="Global Accelerator&#10;Anycast IPs and regional&#10;health" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="560" y="44" width="232" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-users-global" parent="edge" edge="1" source="users" target="global" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a" parent="1" vertex="1" value="02   REGION A  /  PRIMARY WRITER" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#609e89;fontColor=#215f4c;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="24" y="320" width="577" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="alb_a" parent="a" vertex="1" value="Regional ALB + WAF&#10;Healthy regional endpoint" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="56" width="216" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="app_a" parent="a" vertex="1" value="Active application&#10;ECS or EKS" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="145" width="216" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ddb_a" parent="a" vertex="1" value="DynamoDB replica&#10;Regional Global Tables&#10;member" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#f5eff8;strokeColor=#a889b7;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="281" y="239" width="216" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="db_a" parent="a" vertex="1" value="Aurora Global Database&#10;Primary writer" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#f5eff8;strokeColor=#a889b7;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="239" width="216" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-alb_a-app_a" parent="a" edge="1" source="alb_a" target="app_a" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-app_a-db_a" parent="a" edge="1" source="app_a" target="db_a" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-app_a-ddb_a" parent="a" edge="1" source="app_a" target="ddb_a" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="389" y="175" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-global-alb_a" parent="1" edge="1" source="global" target="alb_a" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.22;exitY=1;entryX=1;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="635.04" y="406" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b" parent="1" vertex="1" value="03   REGION B  /  ACTIVE APP, SECONDARY DB" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#609e89;fontColor=#215f4c;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="799" y="320" width="577" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="alb_b" parent="b" vertex="1" value="Regional ALB + WAF&#10;Healthy regional endpoint" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="56" width="216" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="app_b" parent="b" vertex="1" value="Active application&#10;ECS or EKS" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="145" width="216" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ddb_b" parent="b" vertex="1" value="DynamoDB replica&#10;Regional Global Tables&#10;member" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#f5eff8;strokeColor=#a889b7;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="239" width="216" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="db_b" parent="b" vertex="1" value="Aurora Global Database&#10;Read-only until promoted" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#f5eff8;strokeColor=#a889b7;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="281" y="239" width="216" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-alb_b-app_b" parent="b" edge="1" source="alb_b" target="app_b" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-app_b-ddb_b" parent="b" edge="1" source="app_b" target="ddb_b" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-app_b-db_b" parent="b" edge="1" source="app_b" target="db_b" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="389" y="175" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-global-alb_b" parent="1" edge="1" source="global" target="alb_b" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.78;exitY=1;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="764.96" y="406" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-ddb_a-ddb_b" parent="1" edge="1" source="ddb_a" target="ddb_b" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#426d9c;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;dashPattern=5 4;startArrow=blockThin;startFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="replication" parent="1" vertex="1" value="DynamoDB replication" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;text;strokeColor=none;fillColor=none;fontSize=12;fontColor=#426d9c;">
+          <mxGeometry x="604" y="553" width="192" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-db_a-db_b" parent="1" edge="1" source="db_a" target="db_b" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#426d9c;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=0.5;exitY=1;entryX=0.5;entryY=1;dashed=1;dashPattern=5 4;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="156" y="656" />
+              <mxPoint x="1188" y="656" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="aurora-label" parent="1" vertex="1" value="Aurora async replication" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;text;strokeColor=none;fillColor=none;fontSize=12;fontColor=#426d9c;">
+          <mxGeometry x="604" y="633" width="192" height="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

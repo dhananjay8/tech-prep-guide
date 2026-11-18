@@ -17,9 +17,8 @@ Production-grade deep-dives and scenario guides for AWS staff-level interviews. 
 
 ## Diagrams & Sequence Walkthroughs
 
-- [AWS Staff-Level Interview Diagram Guide](./aws-staff-interview-diagrams-guide.md) — maps each `.drawio` diagram to interview questions and staff-level talking points.
-- [Draw.io architecture diagrams](./aws-staff-interview-diagrams-guide.md#which-diagram-to-use-for-which-interview-question) — open the linked `.drawio` files with diagrams.net or the Draw.io editor.
-- Mermaid sequence walkthroughs: [EC2](./aws-ec2-ha-sequence.md), [ECS Fargate](./aws-ecs-fargate-sequence.md), [EKS](./aws-eks-sequence.md), [Serverless](./aws-serverless-sequence.md), [Event-driven](./aws-event-driven-sequence.md), [Multi-region failover](./aws-multi-region-failover-sequence.md).
+- [AWS architecture diagram gallery](./aws-staff-interview-diagrams-guide.md) — diagrams grouped by use case and interview difficulty, with previews and design notes.
+- Mermaid sequence walkthroughs: [EC2](./diagrams/compute/aws-ec2-ha-sequence.md), [EKS](./diagrams/compute/aws-eks-sequence.md), [Serverless](./diagrams/compute/aws-serverless-sequence.md), [Event-driven](./diagrams/integration/aws-event-driven-sequence.md), [Multi-region failover](./diagrams/reliability/aws-multi-region-failover-sequence.md).
 
 ## How to Use
 

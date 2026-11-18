@@ -29,10 +29,13 @@ in separate repositories. This makes ownership and review clearer.
 ```text
 ArgoCD Control Plane (in-cluster, namespace: argocd)
   ├── argocd-server (API + Web UI + gRPC/CLI endpoint, SSO via Dex/OIDC, RBAC enforcement)
-  ├── argocd-repo-server (clones Git repos, runs helm template / kustomize build → caches rendered YAML in Redis)
-  ├── argocd-application-controller (stateful controller: diffs Redis rendered YAML vs live K8s API state, executes Sync)
+  ├── argocd-repo-server (fetches repositories and renders Helm/Kustomize manifests)
+  ├── argocd-application-controller (reconciles rendered manifests with live Kubernetes state)
   └── argocd-applicationset-controller (generates Applications dynamically from Git dirs, clusters, PRs, matrices)
 ```
+
+Redis is a cache used to reduce requests to Git and the Kubernetes API. It is
+not the source of desired manifests.
 
 - **Application**: says which Git revision and folder to use, and which
   cluster and namespace to update. A project sets its access boundaries.

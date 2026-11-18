@@ -11,14 +11,16 @@
 
 // JavaScript Solution — BFS
 function averageOfLevels(root) {
+  if (!root) return [];
   const result = [];
   const queue = [root];
+  let head = 0;
 
-  while (queue.length) {
-    const size = queue.length;
+  while (head < queue.length) {
+    const size = queue.length - head;
     let sum = 0;
     for (let i = 0; i < size; i++) {
-      const node = queue.shift();
+      const node = queue[head++];
       sum += node.val;
       if (node.left) queue.push(node.left);
       if (node.right) queue.push(node.right);

@@ -17,21 +17,17 @@ function zigzagLevelOrder(root) {
 
   const result = [];
   const queue = [root];
+  let head = 0;
   let leftToRight = true;
 
-  while (queue.length) {
-    const levelSize = queue.length;
-    const level = [];
+  while (head < queue.length) {
+    const levelSize = queue.length - head;
+    const level = new Array(levelSize);
 
     for (let i = 0; i < levelSize; i++) {
-      const node = queue.shift();
-
-      // Insert at front or back depending on direction
-      if (leftToRight) {
-        level.push(node.val);
-      } else {
-        level.unshift(node.val);
-      }
+      const node = queue[head++];
+      const index = leftToRight ? i : levelSize - 1 - i;
+      level[index] = node.val;
 
       if (node.left) queue.push(node.left);
       if (node.right) queue.push(node.right);

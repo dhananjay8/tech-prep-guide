@@ -12,12 +12,14 @@ cloud, DevOps, Kubernetes, Python, and testing.
 ## AWS
 
 - [AWS Staff/Principal Interview Prep](./AWS/README.md)
+- [AWS Architecture Diagram Gallery](./AWS/aws-staff-interview-diagrams-guide.md)
 - [AWS Notes](./AWS/)
 
 ## Azure
 
 - [Azure Cloud Architecture Interview Prep](./Azure/README.md)
-- [Azure AKS Enterprise Diagram](./Azure/Azure-AKS-Enterprise.drawio)
+- [Azure Architecture Diagram Gallery](./Azure/diagrams/README.md)
+- [Azure AKS Enterprise Diagram Preview](./Azure/diagrams/compute/Azure-AKS-Enterprise.md)
 - [Azure Architecture Interview Guide](./Azure/Azure-Architecture-Interview-Guide.md)
 
 ## Cloud Architecture

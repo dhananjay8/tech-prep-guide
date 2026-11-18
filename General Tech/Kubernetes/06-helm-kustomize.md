@@ -28,9 +28,21 @@ Do not run `helm install`, `upgrade`, or `rollback` directly against a pod.
 
 ```yaml
 # templates/deployment.yaml (Go templates)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name | quote }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Chart.Name | quote }}
   template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Chart.Name | quote }}
     spec:
       containers:
         - name: app
@@ -95,14 +107,14 @@ patches:
 
 Kustomize can also create ConfigMaps and Secrets. It adds a hash to the
 generated name, so a changed file can trigger a new Deployment. You can also
-set common labels and a namespace.
+set common labels and a namespace. The generated name is not encryption; do
+not commit plaintext secret values. Use an approved encrypted or external
+secret-management workflow.
 
 ---
 
 ## 4. Helm vs Kustomize (X vs Y)
 
-| | Helm | Kustomize |
-| --- | ------ | ----------- |
 | Question | Helm | Kustomize |
 | --- | --- | --- |
 | How does it work? | Templates and values | A base plus YAML patches |

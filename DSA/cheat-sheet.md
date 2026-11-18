@@ -70,7 +70,7 @@ may be needed, and the input properties still need to justify the choice.
 - **Trigger**: board/grid — explore neighbors or process layers
 
 ### [6] Intervals and Timeline Scans
-- **Problems**: Merge Intervals, Meeting Rooms II, Best Time to Buy/Sell Stock, Daily Temperatures
+- **Problems**: Merge Intervals, Meeting Rooms II, Insert Interval, Minimum Number of Arrows to Burst Balloons
 - **Keywords**: sort by start, sweep line, prefix max, monotonic structure
 - **Trigger**: time ranges, bookings, or prices evolving over a timeline
 
@@ -99,8 +99,8 @@ may be needed, and the input properties still need to justify the choice.
 - **Examples**: Shortest path, Rotting Oranges, Word Ladder, Level Order Traversal
 
 ### 5. DFS (Depth-First Search)
-- **Use when**: Explore all paths, connectivity, cycle detection
-- **Template**: Recursive or stack, mark visited
+- **Use when**: Reachability, connected components, or as a basis for cycle detection and backtracking
+- **Template**: Mark visited for reachability; use path-local state for enumerating simple paths. For directed cycles, distinguish nodes on the active DFS path from finished nodes.
 - **Examples**: Number of Islands, Path Sum, Clone Graph, Flood Fill
 
 ### 6. Backtracking
@@ -148,6 +148,7 @@ may be needed, and the input properties still need to justify the choice.
 - **Use when**: XOR tricks, power of 2, count bits, single number
 - **Key formulas**: for positive `x`, `x & (x-1)` removes its lowest set bit; `x ^ x = 0`, `x ^ 0 = x`
 - **Examples**: Single Number, Counting Bits, Reverse Bits
+- **JavaScript caveat**: `Number` bitwise operators coerce operands to signed 32-bit integers. Use `BigInt` consistently for larger integers.
 
 ### 15. Hash Map and Frequency Counting
 - **Use when**: Need fast membership, counts, grouping, or a complement lookup.
@@ -192,12 +193,14 @@ visited = {start}
 while head < len(queue):
     node = queue[head]
     head += 1
-    for neighbor in graph[node]:
+    for neighbor in graph.get(node, ()):
         if neighbor not in visited:
             visited.add(neighbor)
             queue.append(neighbor)
 ```
 In Python, `collections.deque.popleft()` is also O(1); repeated `list.pop(0)` is O(n).
+This visits the component reachable from `start`; use `graph.get(node, ())` for
+vertices without outgoing edges when the adjacency map omits them.
 
 ### DFS Template
 ```
@@ -266,7 +269,10 @@ def union(x, y):
 | Catalan number | C(n) = C(2n, n) / (n+1) |
 | Permutations | n! / (n-r)! |
 | Combinations | n! / (r! × (n-r)!) |
-| Number of binary-tree shapes with n nodes | Catalan(n) (unlabeled shapes) |
+| Number of ordered binary-tree shapes with n nodes | Catalan(n) (left and right child positions are distinct) |
+
+The closed-form Catalan calculation can overflow fixed-width integers; use
+appropriate big-integer or modular arithmetic when constraints require it.
 
 ---
 

@@ -59,6 +59,8 @@ print(p.process(100))  # {'method': 'PayPal', 'fee': 4.0}
 
 ## Java
 ```java
+import java.util.Map;
+
 interface PaymentStrategy { Map<String, Object> pay(double amount); }
 
 class CreditCard implements PaymentStrategy {
@@ -75,8 +77,12 @@ class PaymentProcessor {
 }
 ```
 
+The examples illustrate strategy selection only. For real monetary arithmetic,
+use integer minor units or an appropriate decimal type and define a rounding
+policy. The Java snippet uses `Map.of` (Java 9+).
+
 ## Interview Talking Points
-- Eliminates long `if/else` or `switch` blocks
+- Separates the selected behavior from the context; the caller may still use a conditional to choose a strategy.
 - **Open/Closed Principle**: Add new strategies without modifying existing code
 - In JS/Python, functions ARE strategies (first-class functions replace class-based approach)
-- Real-world: `Array.sort(compareFn)`, Express middleware, authentication strategies (Passport.js)
+- Real-world: `Array.sort(compareFn)`, validation functions, pluggable authentication providers (Passport.js)

@@ -6,6 +6,9 @@
 - Keep scroll height equal to full list height
 - Add overscan to avoid blank edges while scrolling
 
+Assume `rowHeight` and `height` are positive and `overscan` is a non-negative
+integer. The visible range includes every row that intersects the viewport.
+
 ## Implementation
 ```javascript
 import { useMemo, useState } from 'react';
@@ -15,11 +18,11 @@ function VirtualizedList({ items, rowHeight = 40, height = 400, overscan = 5, re
   const totalHeight = items.length * rowHeight;
 
   const range = useMemo(() => {
-    const start = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
-    const visibleCount = Math.ceil(height / rowHeight);
-    const end = Math.min(items.length, start + visibleCount + overscan * 2);
+    const top = Math.min(Math.max(0, scrollTop), Math.max(0, totalHeight - height));
+    const start = Math.max(0, Math.floor(top / rowHeight) - overscan);
+    const end = Math.min(items.length, Math.ceil((top + height) / rowHeight) + overscan);
     return { start, end };
-  }, [scrollTop, rowHeight, height, overscan, items.length]);
+  }, [scrollTop, rowHeight, height, overscan, items.length, totalHeight]);
 
   const visibleItems = items.slice(range.start, range.end);
 

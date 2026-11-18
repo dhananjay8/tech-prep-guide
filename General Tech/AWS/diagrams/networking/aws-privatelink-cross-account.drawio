@@ -1,0 +1,82 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="aws-privatelink-cross-account" name="Architecture">
+    <mxGraphModel grid="1" gridSize="10" guides="1" connect="1" arrows="1" page="1" pageWidth="1400" pageHeight="684" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="banner" parent="1" vertex="1" value="Private service access across AWS accounts&#10;How would you expose a private SaaS API to many customer VPCs without VPC peering?" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=10;fillColor=#172c43;strokeColor=none;fontColor=#ffffff;fontSize=18;align=left;spacingLeft=24;">
+          <mxGeometry x="24" y="20" width="1352" height="102" as="geometry" />
+        </mxCell>
+        <mxCell id="lane0" parent="1" vertex="1" value="REQUEST PATH  /  CONSUMER INITIATES CONNECTION" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;swimlane;startSize=30;rounded=1;collapsible=0;container=1;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#d48a38;fontColor=#28425e;fontSize=12;fontStyle=1;align=left;spacingLeft=14;">
+          <mxGeometry x="24" y="140" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="c0-0" parent="lane0" vertex="1" value="Consumer workload" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="76" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c0-1" parent="lane0" vertex="1" value="Interface endpoint&#10;private ENI + SG" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="326" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="e0-1" edge="1" parent="lane0" source="c0-0" target="c0-1" style="html=0;noEdgeStyle=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c0-2" parent="lane0" vertex="1" value="Endpoint service&#10;AWS PrivateLink" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="576" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="e0-2" edge="1" parent="lane0" source="c0-1" target="c0-2" style="html=0;noEdgeStyle=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c0-3" parent="lane0" vertex="1" value="Provider NLB" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="826" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="e0-3" edge="1" parent="lane0" source="c0-2" target="c0-3" style="html=0;noEdgeStyle=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c0-4" parent="lane0" vertex="1" value="Healthy API targets" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="1076" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="e0-4" edge="1" parent="lane0" source="c0-3" target="c0-4" style="html=0;noEdgeStyle=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lane1" parent="1" vertex="1" value="DNS AND ACCESS  /  SEPARATE FROM REQUEST AUTHORIZATION" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;swimlane;startSize=30;rounded=1;collapsible=0;container=1;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#83a6ce;fontColor=#28425e;fontSize=12;fontStyle=1;align=left;spacingLeft=14;">
+          <mxGeometry x="24" y="295" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="c1-0" parent="lane1" vertex="1" value="Consumer DNS&#10;private resolution" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="76" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c1-1" parent="lane1" vertex="1" value="Endpoint ENI IP" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="326" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c1-2" parent="lane1" vertex="1" value="Allowed principals" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="576" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c1-3" parent="lane1" vertex="1" value="Connection acceptance" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="826" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c1-4" parent="lane1" vertex="1" value="App authenticates&#10;each caller" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#edf5ff;strokeColor=#83a6ce;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="1076" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lane2" parent="1" vertex="1" value="OPERATIONS  /  MEASURE AND TEST EACH BOUNDARY" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;swimlane;startSize=30;rounded=1;collapsible=0;container=1;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#609e89;fontColor=#28425e;fontSize=12;fontStyle=1;align=left;spacingLeft=14;">
+          <mxGeometry x="24" y="450" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="c2-0" parent="lane2" vertex="1" value="Per-AZ endpoints" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="76" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c2-1" parent="lane2" vertex="1" value="NLB target health" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="326" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c2-2" parent="lane2" vertex="1" value="TLS + auth failures" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="576" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c2-3" parent="lane2" vertex="1" value="Flow logs + metrics" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="826" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="c2-4" parent="lane2" vertex="1" value="Test endpoint loss" style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;fontColor=#263b53;fontSize=13;">
+          <mxGeometry x="1076" y="55" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="foot" parent="1" vertex="1" value="DESIGN NOTE    Each lane is a separate view; see the interview discussion for trade-offs and failure handling." style="html=0;whiteSpace=wrap;overflow=visible;fontFamily=Helvetica;rounded=1;arcSize=16;fillColor=#eaf0f7;strokeColor=none;fontColor=#28425e;fontSize=13;align=left;spacingLeft=15;">
+          <mxGeometry x="24" y="626" width="1352" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

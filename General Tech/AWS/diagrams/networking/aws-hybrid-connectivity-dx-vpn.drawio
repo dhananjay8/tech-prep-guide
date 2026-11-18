@@ -1,0 +1,82 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="aws-hybrid-connectivity-dx-vpn" name="Architecture">
+    <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="0" page="1" pageScale="1" pageWidth="1400" pageHeight="684" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="banner" parent="1" vertex="1" value="Hybrid connectivity: Direct Connect and VPN&#10;Two BGP paths meet at the same AWS Transit Gateway without merging routing domains." style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=10;fillColor=#172c43;strokeColor=none;spacingLeft=24;align=left;fontSize=18;fontColor=#ffffff;">
+          <mxGeometry x="24" y="20" width="1352" height="102" as="geometry" />
+        </mxCell>
+        <mxCell id="takeaway" parent="1" vertex="1" value="DESIGN NOTE Set and test BGP preference and return routes. VPN backup convergence is not instantaneous." style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=16;fillColor=#eaf0f7;strokeColor=none;spacingLeft=15;align=left;fontSize=13;fontColor=#28425e;fontSize=13;">
+          <mxGeometry x="24" y="626" width="1352" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="primary" parent="1" vertex="1" value="01   PREFERRED PATH  /  DIRECT CONNECT" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#d48a38;fontColor=#87440c;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="24" y="140" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="dc" parent="primary" vertex="1" value="Data-center routers&#10;Segment prod/corp/PCI&#10;traffic" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="dx" parent="primary" vertex="1" value="Direct Connect&#10;Provider circuit / DX&#10;location" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="247" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="vif" parent="primary" vertex="1" value="Transit virtual interface&#10;BGP over Direct Connect" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="470" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="dxgw" parent="primary" vertex="1" value="Direct Connect Gateway&#10;Associated with Transit&#10;Gateway" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="693" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="tgw1" parent="primary" vertex="1" value="Transit Gateway&#10;AWS regional routing hub" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="916" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-dc-dx" parent="primary" edge="1" source="dc" target="dx" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-dx-vif" parent="primary" edge="1" source="dx" target="vif" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-vif-dxgw" parent="primary" edge="1" source="vif" target="dxgw" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-dxgw-tgw1" parent="primary" edge="1" source="dxgw" target="tgw1" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#364e67;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="secondary" parent="1" vertex="1" value="02   BACKUP PATH  /  SITE-TO-SITE VPN" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#d48a38;fontColor=#87440c;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="24" y="295" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="router" parent="secondary" vertex="1" value="Data-center routers&#10;Customer gateway device" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="vpn" parent="secondary" vertex="1" value="Site-to-Site VPN&#10;IPsec tunnels with BGP" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#fff5e7;strokeColor=#d48a38;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="247" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="tgw2" parent="secondary" vertex="1" value="Same Transit Gateway&#10;Alternative route to AWS" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="470" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-router-vpn" parent="secondary" edge="1" source="router" target="vpn" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#aa641e;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;dashPattern=5 4;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-vpn-tgw2" parent="secondary" edge="1" source="vpn" target="tgw2" style="noEdgeStyle=1;rounded=1;arcSize=10;html=1;strokeColor=#aa641e;strokeWidth=2;endArrow=blockThin;endFill=1;exitPerimeter=0;entryPerimeter=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;dashPattern=5 4;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="attachments" parent="1" vertex="1" value="03   ATTACHMENTS  /  CONTROLLED WITH TRANSIT GATEWAY ROUTE TABLES" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;swimlane;startSize=30;rounded=1;arcSize=10;collapsible=0;container=1;recursiveResize=0;fillColor=#f0f4f9;swimlaneFillColor=#f9fbfd;strokeColor=#a3b1c3;fontColor=#405775;fontSize=12;fontStyle=1;align=left;spacingLeft=14;verticalAlign=middle;">
+          <mxGeometry x="24" y="450" width="1352" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="attachment" parent="attachments" vertex="1" value="Shared services VPC&#10;DNS Resolver, AD, proxy" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="24" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="app" parent="attachments" vertex="1" value="Application VPC&#10;ECS/EKS and app services" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#eaf7f3;strokeColor=#609e89;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="247" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="data" parent="attachments" vertex="1" value="Data VPC&#10;Analytics and lake" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#f5eff8;strokeColor=#a889b7;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="470" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="inspect" parent="attachments" vertex="1" value="Inspection VPC&#10;Network Firewall +&#10;routing" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="693" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="observe" parent="attachments" vertex="1" value="Connectivity operations&#10;BGP alarms + TGW flow&#10;logs" style="html=0;whiteSpace=wrap;fontFamily=Helvetica;fontColor=#172c43;overflow=visible;rounded=1;arcSize=13;fillColor=#ffffff;strokeColor=#a3b1c3;strokeWidth=1.4;spacing=4;fontSize=12;fontColor=#263b53;">
+          <mxGeometry x="916" y="55" width="188" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

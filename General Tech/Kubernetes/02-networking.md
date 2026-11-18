@@ -15,8 +15,8 @@ Implemented by a **CNI plugin**: Calico (NetworkPolicy, BGP), Cilium (eBPF, fast
 | --- | --- | --- | --- | --- |
 | **Flannel** | Linux bridge + VXLAN | Overlay (VXLAN UDP 8472) | ❌ None | Simple, no NetworkPolicy (unless paired with Calico as Canal) |
 | **Calico** | `iptables` or eBPF | BGP direct routing (underlay) or VXLAN/IP-in-IP | ✅ Rich L3/L4 + GlobalNetworkPolicy | Enterprise workhorse; BGP avoids overlay encapsulation tax on-prem |
-| **Cilium** | **eBPF** (socket & tc hooks) | Native routing or VXLAN/Geneve | ✅ L3/L4 + **L7 (HTTP/gRPC/DNS)** | Replaces `kube-proxy` entirely; Hubble flow UI; sidecarless Service Mesh |
-| **AWS VPC CNI** | Secondary VPC IPs on ENIs | Underlay (native VPC routing) | ✅ (v1.14+ via eBPF) | **IP Exhaustion Trap**: nodes run out of ENI IPs (`max-pods = (ENIs × (IPs-per-ENI - 1)) + 2`) or exhaust subnet `/24` CIDRs → fix with **Prefix Delegation** (`/28` = 16 IPs per ENI slot) or secondary `100.64.0.0/10` CGNAT CIDRs |
+| **Cilium** | **eBPF** (socket & tc hooks) | Native routing or VXLAN/Geneve | ✅ L3/L4 + optional **L7 (HTTP/gRPC/DNS)** | Can replace `kube-proxy` when configured; Hubble flow visibility and optional sidecarless service-mesh features |
+| **AWS VPC CNI** | Secondary VPC IPs on ENIs | Underlay (native VPC routing) | Available with supported policy configuration | **IP exhaustion risk**: pod capacity depends on instance type, ENI/IP limits, CNI settings, and subnet space. Prefix delegation or custom networking can increase available addresses. |
 
 ---
 
@@ -24,7 +24,7 @@ Implemented by a **CNI plugin**: Calico (NetworkPolicy, BGP), Cilium (eBPF, fast
 
 ```text
 Client → Service ClusterIP:port
-       → kube-proxy rule (iptables O(n) | IPVS O(1))
+       → Service dataplane (kube-proxy iptables/IPVS, eBPF replacement, or provider implementation)
        → Endpoint = ready Pod IP:targetPort
 
 External: Client → LB/NodeIP:nodePort → ClusterIP → kube-proxy → Pod:targetPort
@@ -148,17 +148,18 @@ Controllers: **NGINX** (most common), **AWS ALB Controller** (native ALB), **Tra
 
 ## 5. CoreDNS & In-Cluster DNS (from source advanced Q)
 
-- Pods get `/etc/resolv.conf` → cluster DNS IP (CoreDNS); search domains include `ns.svc.cluster.local` and **`ndots:5`** — so `my-svc` expands before being treated as external (that's why `my-svc` works but `example.com` does 5 lookups first).
-- **The `ndots:5` Latency & Conntrack Tax**: Calling `api.stripe.com` (2 dots < 5) causes `libc` to try:
-  1. `api.stripe.com.<ns>.svc.cluster.local` (NXDOMAIN)
-  2. `api.stripe.com.svc.cluster.local` (NXDOMAIN)
-  3. `api.stripe.com.cluster.local` (NXDOMAIN)
-  4. `api.stripe.com.<cloud-domain>` (NXDOMAIN)
-  5. Finally `api.stripe.com.` (A + AAAA = **8–10 UDP packets per external lookup!**)
+- Pods normally use the cluster DNS service and a search list that includes
+  the Pod namespace and cluster domains. With `ndots:5`, a name with fewer
+  than five dots is tried with the configured search suffixes before an
+  absolute lookup. The query count depends on the search list, resolver,
+  cache, and whether A and AAAA lookups are issued.
 - **Fixes for DNS latency/timeouts at scale**:
   1. Use a trailing dot for external FQDNs (`api.stripe.com.`) to bypass search path expansion immediately.
   2. Set `dnsConfig: { options: [{ name: ndots, value: "2" }] }` on pods that call external APIs heavily.
-  3. Deploy **NodeLocal DNSCache** (DaemonSet listening on `169.254.20.10` on each node — caches DNS locally, upgrades upstream CoreDNS queries from UDP to TCP, eliminating Linux kernel `nf_conntrack` UDP race-condition packet drops).
+  3. Deploy **NodeLocal DNSCache** on each node. It caches queries locally and
+     avoids the Service DNAT/conntrack path for Pod-to-DNS requests. On cache
+     misses, it can use TCP to reach CoreDNS when configured; this reduces
+     some UDP conntrack pressure but does not eliminate every DNS failure.
 - FQDN: `<svc>.<ns>.svc.cluster.local`; same-namespace short name is enough.
 - **Resolution failing?** Debug sequence: `nslookup`/`dig` inside the pod → `kubectl -n kube-system logs -l k8s-app=kube-dns` → CoreDNS ConfigMap (`Corefile`) → CNI/network policy egress to `kube-dns:53` → node DNS config.
 - **Service Mesh (Istio / Linkerd / Cilium)**: For L7 east-west mTLS, gRPC load balancing, circuit breaking, and traffic splitting (`VirtualService` / `DestinationRule`), see `../DevOps/06-nginx-haproxy-service-mesh.md`.
@@ -171,14 +172,24 @@ All pod traffic is **allowed by default**; the first policy selecting a pod flip
 
 ```yaml
 # allow only frontend → api :8080
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-to-api
+  namespace: app
 spec:
   podSelector: { matchLabels: { app: api } }
   policyTypes: [Ingress]
   ingress:
     - from: [{ podSelector: { matchLabels: { app: frontend } } }]
       ports: [{ port: 8080 }]
-
+---
 # deny-all baseline (then add allow-lists)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: app
 spec:
   podSelector: {}
   policyTypes: [Ingress, Egress]
