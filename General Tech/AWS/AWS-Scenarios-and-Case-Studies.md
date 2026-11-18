@@ -196,7 +196,7 @@ EKS (payment service)
   │      - Transactions table with conditional updates
   │
   ├──► SQS FIFO (payment commands per account)
-  │      - Ensures ordering and exactly-once processing per account
+  │      - Preserves per-account ordering; use conditional writes and idempotency for effectively-once business effects
   │
   ├──► Step Functions (orchestrated fraud/AML checks)
   │
@@ -214,7 +214,7 @@ Cross-Region:
 | Concern | Decision | Reason |
 |---|---|---|
 | Strong consistency | Per-account ownership + conditional writes | Each account mastered in one Region; no cross-Region concurrent writes |
-| Exactly-once processing | SQS FIFO + idempotency table | Ordered delivery + deduplication keys |
+| Effectively-once business effects | SQS FIFO + idempotency/conditional-write store | Per-group ordering and send deduplication do not replace idempotent consumer logic |
 | Audit immutability | S3 Object Lock (WORM) | Compliance requirement for financial records |
 | Fraud checks | Step Functions orchestration | Parallel rules, retries, audit trail |
 | Regional data residency | Route 53 geolocation routes EU accounts to eu-west-1 | Accounts created in home Region stay there |
@@ -795,7 +795,7 @@ Auto Scaling:
 ### Staff-Level Follow-Ups
 
 **Q: Why SQS FIFO and not standard SQS?**
-A: Orders for the same SKU must be processed sequentially to avoid overselling. FIFO with `MessageGroupId` per SKU ensures ordering and exactly-once processing per group while allowing parallel processing across SKUs.
+A: Orders for the same SKU must be processed sequentially to avoid overselling. FIFO with `MessageGroupId` per SKU preserves ordering while allowing parallel processing across SKUs. Conditional inventory updates and idempotent consumers protect the business effect from retries and duplicate deliveries.
 
 **Q: How do you prevent cost explosion during the spike?**
 A: Use target-tracking auto-scaling with maximum capacity limits, Spot instances where possible, DynamoDB on-demand (which scales but costs more per request; reserved for spikes), and cache reads to reduce DB load.

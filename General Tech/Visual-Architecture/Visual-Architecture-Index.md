@@ -12,7 +12,7 @@ Production-style architecture diagrams for deployment, reliability, security, an
 
 | # | Diagram | Location | Best For |
 |---|---|---|---|
-| 1 | [Azure-AKS-Enterprise.drawio](../Azure/Azure-AKS-Enterprise.drawio) | `General Tech/Azure/` | Enterprise AKS deployment |
+| 1 | [Azure-AKS-Enterprise.drawio](../Azure/Azure-AKS-Enterprise.drawio) | `General Tech/Azure/` | Private AKS, Front Door Private Link, Gateway API, and zone-aware data |
 
 AWS architecture diagrams and deep-dives live in `General Tech/AWS/`.
 
@@ -20,7 +20,7 @@ AWS architecture diagrams and deep-dives live in `General Tech/AWS/`.
 
 | # | Sequence | Location | Focus |
 |---|---|---|---|
-| 1 | [Azure-AKS-Sequence.md](../Azure/Azure-AKS-Sequence.md) | `General Tech/Azure/` | AKS runtime and progressive rollout |
+| 1 | [Azure-AKS-Sequence.md](../Azure/Azure-AKS-Sequence.md) | `General Tech/Azure/` | AKS deployment, request, autoscaling, and regional recovery |
 | 2 | [FortiRecon-Event-Pipeline-Sequence.md](../companies/FortiRecon/FortiRecon-Event-Pipeline-Sequence.md) | `General Tech/companies/FortiRecon/` | FortiRecon EASM/DRP discovery to alert pipeline |
 
 ## Companion Docs

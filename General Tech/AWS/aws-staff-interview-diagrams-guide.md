@@ -5,29 +5,30 @@ Use the diagram set in this folder to discuss architecture choices using tradeof
 ## Which Diagram to Use for Which Interview Question
 
 - Scale stateless web/API quickly:
-  - [drawio/aws-ecs-fargate-ha.drawio](aws-ecs-fargate-ha.drawio)
-  - [drawio/aws-eks-multi-az.drawio](aws-eks-multi-az.drawio)
+  - [EC2 high availability](aws-ec2-ha.drawio)
+  - [ECS Fargate high availability](aws-ecs-fargate-ha.drawio)
+  - [EKS multi-AZ](aws-eks-multi-az.drawio)
 
 - Minimize ops overhead and ship fast:
-  - [drawio/aws-serverless-lambda.drawio](aws-serverless-lambda.drawio)
+  - [Serverless Lambda](aws-serverless-lambda.drawio)
 
 - Extreme resilience and global traffic:
-  - [drawio/aws-multi-region-active-active.drawio](aws-multi-region-active-active.drawio)
+  - [Multi-region active-active](aws-multi-region-active-active.drawio)
 
 - High-security/regulated environments:
-  - [drawio/aws-zero-trust-private-eks.drawio](aws-zero-trust-private-eks.drawio)
+  - [Zero-trust private EKS](aws-zero-trust-private-eks.drawio)
 
 - Decoupled systems and asynchronous reliability:
-  - [drawio/aws-event-driven-microservices.drawio](aws-event-driven-microservices.drawio)
+  - [Event-driven microservices](aws-event-driven-microservices.drawio)
 
 - Platform governance and enterprise scale:
-  - [drawio/aws-multi-account-landing-zone.drawio](aws-multi-account-landing-zone.drawio)
+  - [Multi-account landing zone](aws-multi-account-landing-zone.drawio)
 
 - Hybrid enterprise networking and migration scenarios:
-  - [drawio/aws-hybrid-connectivity-dx-vpn.drawio](aws-hybrid-connectivity-dx-vpn.drawio)
+  - [Hybrid connectivity: Direct Connect + VPN](aws-hybrid-connectivity-dx-vpn.drawio)
 
 - Identity and secrets at enterprise scale:
-  - [drawio/aws-centralized-identity-secrets.drawio](aws-centralized-identity-secrets.drawio)
+  - [Centralized identity and secrets](aws-centralized-identity-secrets.drawio)
 
 ## Staff-Level Talking Points
 
@@ -50,6 +51,9 @@ Use the diagram set in this folder to discuss architecture choices using tradeof
 
 ## Sequence Walkthrough References
 
-- [sequence/aws-ecs-fargate-sequence.md](aws-ecs-fargate-sequence.md)
-- [sequence/aws-multi-region-failover-sequence.md](aws-multi-region-failover-sequence.md)
-- [sequence/aws-event-driven-sequence.md](aws-event-driven-sequence.md)
+- [EC2 deployment and request flow](aws-ec2-ha-sequence.md)
+- [ECS Fargate deployment and request flow](aws-ecs-fargate-sequence.md)
+- [EKS deployment and request flow](aws-eks-sequence.md)
+- [Serverless request and event flow](aws-serverless-sequence.md)
+- [Event-driven order processing](aws-event-driven-sequence.md)
+- [Multi-region failover and recovery](aws-multi-region-failover-sequence.md)

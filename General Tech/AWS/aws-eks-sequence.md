@@ -1,51 +1,77 @@
 # AWS EKS Multi-AZ - Runtime + Deployment Sequence
 
+## Deployment flow
+
 ```mermaid
 sequenceDiagram
     autonumber
     participant Dev as Developer
-    participant GH as GitHub Repo (Monorepo FE+BE)
+    participant GH as GitHub repository
     participant GHA as GitHub Actions
     participant ECR as Amazon ECR
-    participant R53 as Route53
-    participant CF as CloudFront/WAF
-    participant ALB as ALB Ingress
-    participant POD as EKS Pods (React+Express)
-    participant HPA as HPA/Cluster Autoscaler
-    participant Cache as ElastiCache Redis
-    participant DB as Aurora Cluster
-    participant Obs as CloudWatch/Prometheus/Grafana
+    participant K8s as Kubernetes API server
+    participant POD as EKS application pods
+    participant Obs as Prometheus and CloudWatch
 
     Dev->>GH: Push commit and tag
     GH->>GHA: Start CI/CD pipeline
-    GHA->>GHA: Test + SAST + SCA + container scan
+    GHA->>GHA: Run tests and security scans
     GHA->>ECR: Push signed images
-    GHA->>POD: Helm upgrade (canary 5% traffic)
-    GHA->>Obs: Publish deployment annotations
+    GHA->>K8s: Apply Helm release and start canary
+    K8s->>POD: Schedule canary pods
+    GHA->>Obs: Evaluate canary SLO metrics
 
-    alt Canary SLO regression
-        Obs-->>GHA: Error rate/latency gate breached
-        GHA->>POD: Automated rollback to previous release
-    else Canary healthy
-        GHA->>POD: Promote rollout to 100%
+    alt SLO gate fails
+        Obs-->>GHA: Error rate or latency threshold breached
+        GHA->>K8s: Roll back to previous release
+        K8s->>POD: Restore stable workload
+    else SLO gate passes
+        Obs-->>GHA: Canary metrics are healthy
+        GHA->>K8s: Promote rollout
+        K8s->>POD: Complete deployment
     end
+```
 
-    Dev->>R53: DNS query
-    R53->>CF: Resolve edge endpoint
-    CF->>ALB: Forward API/UI traffic
-    ALB->>POD: Route by host/path
-    POD->>Cache: Cache lookup/update
-    POD->>DB: Query/write with IAM auth/secret
-    DB-->>POD: Data response
-    POD-->>ALB: App response
-    ALB-->>CF: Response
-    CF-->>Dev: Final response
-    POD->>Obs: Metrics, traces, logs
+## Request flow
 
-    opt Traffic spike
-        Obs-->>HPA: CPU/RPS threshold exceeded
-        HPA->>POD: Scale pods and nodes
-    end
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User as Application user
+    participant R53 as Route 53
+    participant CF as CloudFront and WAF
+    participant ALB as ALB ingress
+    participant POD as EKS application pods
+    participant Cache as ElastiCache Redis
+    participant DB as Aurora Multi-AZ
+
+    User->>R53: Resolve application hostname
+    R53-->>User: Return CloudFront distribution name
+    User->>CF: Send HTTPS request
+    CF->>ALB: Forward API or UI request
+    ALB->>POD: Route to healthy pods by host/path
+    POD->>Cache: Read or update cache
+    POD->>DB: Read or write using workload IAM identity
+    DB-->>POD: Return query result
+    POD-->>ALB: Return application response
+    ALB-->>CF: Return origin response
+    CF-->>User: Return cached or origin response
+```
+
+## Autoscaling flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant HPA as Horizontal Pod Autoscaler
+    participant MET as Kubernetes Metrics API
+    participant K8s as Kubernetes API server
+    participant POD as EKS application pods
+
+    HPA->>MET: Read CPU or custom metrics
+    MET-->>HPA: Return current utilization
+    HPA->>K8s: Increase desired pod replicas
+    K8s->>POD: Schedule additional pods
 ```
 
 ## Staff Interview Angles

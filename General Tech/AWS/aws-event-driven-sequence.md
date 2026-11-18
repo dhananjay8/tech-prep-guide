@@ -1,40 +1,64 @@
 # AWS Event-Driven Microservices - Order Processing Sequence
 
+## Order acceptance and event publication
+
 ```mermaid
 sequenceDiagram
     autonumber
-    participant User as User
-    participant API as API Gateway/ALB
-    participant CMD as Command Service
-    participant OLTP as Orders DB
-    participant OUT as Outbox CDC
-    participant EVB as EventBridge
-    participant Q1 as SQS Orders + DLQ
-    participant REG as Schema Registry
-    participant BILL as Billing Consumer
-    participant NOTIF as Notification Consumer
-    participant READ as Read Model Builder
+    participant User as Customer
+    participant API as API Gateway
+    participant CMD as Order command service
+    participant DB as Orders database
+    participant RELAY as Outbox relay
+    participant BUS as EventBridge event bus
 
     User->>API: POST /orders
     API->>CMD: Forward command request
-    CMD->>OLTP: Persist order transaction
-    CMD->>OUT: Persist outbox event in same transaction
-    CMD-->>API: 202/201 response
-    API-->>User: Ack order accepted
+    CMD->>DB: Commit order and outbox row in one transaction
+    DB-->>CMD: Commit successful
+    CMD-->>API: Return 201 Created
+    API-->>User: Confirm order accepted
 
-    OUT->>EVB: Publish OrderCreated event
-    EVB->>REG: Validate event schema version
-    EVB->>Q1: Fan-out to durable queue
-    Q1->>BILL: Consume idempotently and charge payment
-    Q1->>NOTIF: Consume idempotently and send confirmation
-    EVB->>READ: Update query/read model
+    RELAY->>DB: Read unpublished outbox rows
+    DB-->>RELAY: Return OrderCreated event
+    RELAY->>BUS: Publish event with schema version and event ID
+```
 
-    alt Consumer failure
-        BILL--xQ1: Processing error
-        Q1->>Q1: Retry with backoff
-        Q1->>Q1: Move to DLQ after max retry
-    else Replay operation
-        Q1->>BILL: Reprocess from DLQ with same idempotency key
+## Asynchronous fan-out and recovery
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant BUS as EventBridge event bus
+    participant BILLQ as Billing SQS queue
+    participant BILL as Billing consumer
+    participant NOTIFQ as Notification SQS queue
+    participant NOTIF as Notification consumer
+    participant READ as Read-model consumer
+    participant DLQ as Billing dead-letter queue
+    participant Ops as Redrive operator
+
+    BUS->>BILLQ: Route matching event
+    BUS->>NOTIFQ: Route matching event
+    BUS->>READ: Invoke read-model consumer
+    READ->>READ: Update query model idempotently
+
+    BILL->>BILLQ: Poll and receive message
+    BILL->>BILL: Charge payment with idempotency key
+    NOTIF->>NOTIFQ: Poll and receive message
+    NOTIF->>NOTIF: Send confirmation idempotently
+
+    alt Billing succeeds
+        BILL-->>BILLQ: Delete processed message
+    else Billing repeatedly fails
+        BILL-->>BILLQ: Leave message for retry
+        BILLQ->>DLQ: Redrive after max receives
+    end
+
+    opt Operator replays failed event
+        Ops->>DLQ: Start redrive to source queue
+        DLQ-->>BILLQ: Return message for reprocessing
+        BILL->>BILLQ: Receive redriven message
     end
 ```
 

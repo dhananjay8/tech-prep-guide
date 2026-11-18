@@ -1,59 +1,90 @@
 # AWS Serverless (Lambda) - Runtime + Deployment Sequence
 
+## Deployment flow
+
 ```mermaid
 sequenceDiagram
     autonumber
     participant Dev as Developer
-    participant GH as GitHub Repo (Monorepo FE+BE)
+    participant GH as GitHub repository
     participant GHA as GitHub Actions
-    participant S3 as S3 Static Site
-    participant APIGW as API Gateway
-    participant L as Lambda (Express Adapter)
-    participant DDB as DynamoDB
-    participant AUR as Aurora Serverless
-    participant SQS as SQS/EventBridge
-    participant CON as Async Consumer Lambda
-    participant DLQ as Dead-Letter Queue
-    participant R53 as Route53
-    participant CF as CloudFront/WAF
+    participant S3 as S3 static-site bucket
+    participant CF as CloudFront
+    participant L as API Lambda
 
     Dev->>GH: Push commit
     GH->>GHA: Trigger CI/CD
-    GHA->>GHA: Test + security scans
-    GHA->>S3: Upload FE assets + invalidate CF cache
-    GHA->>L: Deploy BE functions (version + alias)
+    GHA->>GHA: Run tests and security scans
+    GHA->>S3: Upload versioned frontend assets
+    GHA->>CF: Invalidate changed asset paths
+    GHA->>L: Publish function version and update alias
+```
 
-    Dev->>R53: Resolve domain
-    R53->>CF: Route to edge
-    CF->>S3: Serve SPA assets
-    Dev->>CF: API request /api/*
-    CF->>APIGW: Forward API call
-    APIGW->>L: Invoke Lambda
-    alt Fast-path
-        L->>DDB: Read/Write key-value data
-        DDB-->>L: Result
-    else Relational path
-        L->>AUR: Query via RDS Proxy
-        AUR-->>L: Result
+## Web and API request flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User as Application user
+    participant R53 as Route 53
+    participant CF as CloudFront and WAF
+    participant S3 as S3 static-site bucket
+    participant APIGW as API Gateway
+    participant L as API Lambda
+    participant DDB as DynamoDB
+    participant Proxy as RDS Proxy
+    participant AUR as Aurora Serverless
+
+    User->>R53: Resolve application hostname
+    R53-->>User: Return CloudFront distribution name
+    User->>CF: Request page or /api/* resource
+    alt Static asset request
+        CF->>S3: Fetch SPA asset from origin
+        S3-->>CF: Return asset
+        CF-->>User: Return cached or origin asset
+    else API request
+        CF->>APIGW: Forward request using API behavior
+        APIGW->>L: Invoke API function
+        alt Key-value access
+            L->>DDB: Read or write item
+            DDB-->>L: Return item or write result
+        else Relational access
+            L->>Proxy: Borrow database connection
+            Proxy->>AUR: Execute query
+            AUR-->>Proxy: Return query result
+            Proxy-->>L: Return query result
+        end
+        L-->>APIGW: Return API response
+        APIGW-->>CF: Return origin response
+        CF-->>User: Return cached or origin response
     end
-    L->>SQS: Publish async event (idempotency key attached)
+```
 
-    alt Async consumer throttled/failing
-        SQS->>CON: Deliver message
-        CON--xSQS: Processing error
-        SQS->>DLQ: Move after max receive attempts
-    else Consumer healthy
-        SQS->>CON: Deliver message
-        CON-->>SQS: Ack
-    end
+## Asynchronous processing and retries
 
-    L-->>APIGW: API response
-    APIGW-->>CF: Response
-    CF-->>Dev: Final response
+```mermaid
+sequenceDiagram
+    autonumber
+    participant L as API Lambda
+    participant BUS as EventBridge
+    participant SQS as SQS queue
+    participant ESM as Lambda event source mapping
+    participant CON as Async consumer Lambda
+    participant DLQ as Dead-letter queue
 
-    opt Burst traffic
-        APIGW->>L: Burst invokes at concurrency limit
-        L-->>APIGW: 429 or graceful fallback on throttle
+    L->>BUS: Publish event with idempotency key
+    BUS->>SQS: Route matching event to queue
+    ESM->>SQS: Poll for messages
+    SQS-->>ESM: Return message batch
+    ESM->>CON: Invoke consumer with batch
+    CON->>CON: Process idempotently
+    alt Processing succeeds
+        CON-->>ESM: Report successful items
+        ESM->>SQS: Delete successful messages
+    else Processing repeatedly fails
+        CON-->>ESM: Report failed item
+        ESM->>SQS: Retry after visibility timeout
+        SQS->>DLQ: Redrive after max receives
     end
 ```
 

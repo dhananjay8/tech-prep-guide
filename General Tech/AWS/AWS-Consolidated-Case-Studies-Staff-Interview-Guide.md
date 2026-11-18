@@ -428,7 +428,7 @@ You are the staff engineer designing the order platform for a global retailer:
 | Concern | Decision | Reason |
 | :---- | :---- | :---- |
 | Strong consistency | Per-account ownership + conditional writes | Each account mastered in one Region; no cross-Region concurrent writes |
-| Exactly-once processing | SQS FIFO + idempotency table | Per-group ordering plus application-level effectively-once processing |
+| Effectively-once business effects | SQS FIFO + idempotency table | Per-group ordering and send deduplication plus idempotent application logic |
 | Audit immutability | S3 Object Lock (WORM) | Compliance requirement for financial records |
 | Fraud checks | Step Functions orchestration | Parallel rules, retries, audit trail |
 | Regional data residency | Account home-Region ownership enforced by application/data controls | DNS routing alone does not guarantee residency |
@@ -1999,7 +1999,7 @@ Then:
 DLQ
 ---
 
-### 20. Exactly-Once Processing
+### 20. Exactly-Once Claims and Effectively-Once Processing
 
 Don't claim exactly-once delivery.
 
@@ -2645,4 +2645,3 @@ Source video/S3 → Step Functions
 ```
 
 These are alternatives, but remove unnecessary compute hops. Use Lambda for meaningful validation, metadata, custom processing, or finalization; use MediaConvert for managed transcoding and durable state plus callbacks for reconciliation.
-

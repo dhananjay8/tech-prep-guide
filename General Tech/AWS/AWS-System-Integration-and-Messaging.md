@@ -39,12 +39,12 @@ SQS Queue
 | Type | Ordering | Duplication | Throughput | Use Case |
 |---|---|---|---|---|
 | **Standard** | Best-effort | At-least-once | Virtually unlimited | General decoupling |
-| **FIFO** | Strict per group | Exactly-once | 3,000 msg/sec with batching | Order-sensitive workflows |
+| **FIFO** | Strict per message group | Deduplicates sends within its deduplication window; consumers still need idempotent side effects | Up to 3,000 messages/sec per partition with batching in supported high-throughput configurations; verify regional quotas | Order-sensitive workflows |
 
 ### Key concepts
 
 - **Visibility timeout**: period a message is hidden after being received. If not deleted, it reappears for retry.
-- **Dead-letter queue (DLQ)**: messages that fail MaxReceiveCount times are moved here for inspection.
+- **Dead-letter queue (DLQ)**: a source-queue redrive policy moves repeatedly received messages to a compatible DLQ for inspection.
 - **Long polling**: `WaitTimeSeconds > 0` reduces empty responses and cost.
 - **Batching**: `SendMessageBatch`, `ReceiveMessage` up to 10 messages per call.
 - **Delay queues / message timers**: delay visibility up to 15 minutes.
@@ -57,14 +57,14 @@ SQS Queue
    ├── Lambda polls automatically
    ├── Sends batch of messages
    ├── Function processes
-   └── On success: messages deleted
-       On failure (whole batch): retry; after MaxRetries -> DLQ
+    └── On success: messages deleted
+        On failure: retry; source queue redrive policy moves messages after maxReceiveCount
 ```
 
 Best practices:
 - Set visibility timeout **greater than Lambda function timeout**.
 - Use **partial batch responses** to retry only failed messages.
-- Enable DLQs on both the queue and the Lambda event source.
+- Configure a source-queue redrive policy and a DLQ. Lambda asynchronous-invocation DLQs are separate and do not replace an SQS redrive policy for an event source mapping.
 
 ---
 
@@ -93,7 +93,7 @@ SNS Topic
 | Type | Ordering | Deduplication | Throughput | Subscribers |
 |---|---|---|---|---|
 | **Standard** | Best-effort | At-least-once | Very high | All protocols |
-| **FIFO** | Strict per group | Exactly-once | 300 msg/sec | SQS FIFO only |
+| **FIFO** | Strict per group | Deduplicated send semantics; idempotent processing still required | Quota/configuration dependent | SQS FIFO only |
 
 ### Filter policies
 
@@ -142,7 +142,7 @@ EventBridge Event Bus
 
 - **Event pattern matching**: any field in the JSON event.
 - **Input transformation**: reshape payload per target.
-- **Schema registry**: discover and validate event schemas.
+- **Schema registry**: discover/version schemas and generate code bindings. Do not assume the event bus automatically rejects every invalid producer payload; validate contracts at the appropriate boundary.
 - **Archive and replay**: store events and replay later.
 - **EventBridge Scheduler**: schedule one-time or recurring events.
 - **Pipes**: point-to-point integration with filtering, enrichment, and transformation.
@@ -155,7 +155,7 @@ EventBridge Event Bus
 | Ordering | FIFO only | FIFO topic only | No ordering guarantee |
 | Filtering | None (consumer filters) | Attribute/policy filters | Rich JSON pattern matching |
 | Replay | No | No | Yes (with archive) |
-| Schema registry | No | No | Yes |
+| Schema registry | No | No | Yes (discovery/versioning; validation strategy is application-specific) |
 | SaaS integrations | No | No | Native |
 | Targets | Consumer apps | Many protocols | AWS services + HTTP destinations |
 
@@ -235,7 +235,7 @@ MSK Serverless removes broker management but still exposes Kafka APIs.
 | Replay | No | No | Archive replay | Yes | Yes |
 | Retention | 14 days | None | Archive only | 1h–365d | Configurable |
 | Fan-out | 1:1 | 1:many | 1:many filtered | 1:many consumers | 1:many consumer groups |
-| Max payload | 256 KB | 256 KB | 256 KB | 1 MB | Kafka default |
+| Max payload | 1 MiB | 256 KiB | 256 KiB | 1 MiB per record | Kafka/configuration dependent |
 | Throughput | Very high | Very high | High | Shard-limited | Broker-limited |
 | Best for | Buffering | Notifications | Routing | Real-time streams | Kafka ecosystem |
 
@@ -402,7 +402,7 @@ SQS Queue
 
 ### SQS
 - **Visibility timeout must exceed processing time**, including Lambda timeout.
-- **FIFO throughput per message group is 300 msg/sec**; use many message groups for parallelism.
+- FIFO throughput depends on Region, partitioning, batching, and whether high-throughput mode is enabled. In supported Regions, high-throughput FIFO can reach up to 3,000 messages/sec per partition with batching; verify the current quota and spread work across message groups.
 - **SQS does not fan out**; use SNS in front for multiple consumers.
 - **DLQs must be of the same type** (Standard DLQ for standard queue, FIFO DLQ for FIFO queue).
 
@@ -486,7 +486,7 @@ Step Functions orchestrates workflows as state machines. Two workflow types:
 
 | Type | Max Duration | Use Case | Cost |
 |---|---|---|---|
-| **Standard** | Up to 1 year | Long-running, durable, exactly-once | Per state transition |
+| **Standard** | Up to 1 year | Long-running, durable execution; make external side effects idempotent when retries are configured | Per state transition |
 | **Express** | Up to 5 minutes | High-volume, short-lived, at-least-once | Per number of requests + duration |
 
 ### State types
@@ -705,7 +705,7 @@ Need to move data between components?
 
 ## 21. SQS Extended Payloads
 
-SQS messages are limited to 256 KB. For larger payloads, use the SQS Extended Client pattern:
+SQS messages support up to 1 MiB. For larger payloads, use the SQS Extended Client pattern:
 
 - Store the actual payload in S3.
 - Send an SQS message containing a pointer (S3 bucket/key).
@@ -714,7 +714,7 @@ SQS messages are limited to 256 KB. For larger payloads, use the SQS Extended Cl
 Trade-offs:
 - Adds S3 latency and cost.
 - Requires lifecycle/retention alignment between SQS message and S3 object.
-- Use it only when payload truly exceeds 256 KB; otherwise prefer message attribute compression.
+- Use it only when payload exceeds the SQS message limit; otherwise prefer a compact event contract or message attributes.
 
 ---
 

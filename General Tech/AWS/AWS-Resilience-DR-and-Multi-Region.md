@@ -39,8 +39,8 @@ Load Balancer (cross-AZ)
            └── Multi-AZ database standby
 ```
 
-Services that are natively Multi-AZ:
-- ALB/NLB (cross-AZ by default)
+Services that provide multi-AZ capabilities (configuration and defaults differ):
+- ALB cross-zone routing is enabled by default; NLB cross-zone routing is configurable and has different defaults.
 - Aurora (6 copies across 3 AZs)
 - DynamoDB (3 copies across 3 AZs)
 - S3 (multi-AZ redundancy)
@@ -134,10 +134,9 @@ Region A (active) ◄─────────────────► Regi
    └── Read/write data synchronized       └── Read/write data synchronized
 ```
 
-- **RPO**: near zero
-- **RTO**: potentially zero
+- **RPO/RTO**: workload- and service-dependent; active-active alone does not make either zero
 - **Cost**: highest
-- **Use case**: Global applications, financial trading, real-time collaboration.
+- **Use case**: Workloads that justify the cost and have explicit multi-Region data ownership and conflict semantics.
 
 ---
 
@@ -148,7 +147,9 @@ Region A (active) ◄─────────────────► Regi
 | Backup and restore | Hours | Hours–days | $ | Low | Internal tools, analytics |
 | Pilot light | Minutes | Tens of minutes | $$ | Medium | Critical transactional apps |
 | Warm standby | Seconds | Minutes | $$$ | High | Customer-facing services |
-| Active-active | Near zero | Near zero | $$$$ | Highest | Global real-time systems |
+| Active-active | Depends on replication and write ownership | Depends on routing, dependencies, and recovery automation | $$$$ | Highest | Global systems with designed multi-Region data semantics |
+
+These are planning ranges, not service guarantees. Set measurable RTO/RPO targets, then validate them with failure exercises and restore/failover tests.
 
 ---
 
@@ -156,17 +157,20 @@ Region A (active) ◄─────────────────► Regi
 
 ### Synchronous replication
 
-- Writes acknowledged only after both primary and replica confirm.
-- Guarantees zero data loss.
+- The write is acknowledged after the configured synchronous replicas confirm it.
+- Can provide zero-RPO behavior for a defined failure scope, but does not imply zero RTO or protect against every logical/correlated failure.
 - Adds latency; limited by distance.
-- Examples: Aurora global database write forwarding, DynamoDB synchronous global tables.
+- Examples: RDS Multi-AZ synchronous standby within a Region; DynamoDB MRSC Global Tables in supported configurations.
+- Aurora Global Database write forwarding is not synchronous cross-Region replication: writes are forwarded to the primary Region, which remains the source of truth.
 
 ### Asynchronous replication
 
 - Primary acknowledges after local write; replica catches up.
 - Lower latency for writes.
 - Risk of some data loss on failover.
-- Examples: RDS cross-Region read replicas, S3 Cross-Region Replication, DynamoDB global tables default.
+- Examples: RDS cross-Region read replicas, S3 Cross-Region Replication, DynamoDB MREC Global Tables, and Aurora Global Database replication.
+
+For DynamoDB Global Tables, MREC is the default asynchronous mode; MRSC has distinct topology and service constraints. Do not describe all Global Tables as having identical last-writer-wins or strong-consistency behavior.
 
 ### Snapshot / point-in-time
 
@@ -218,9 +222,9 @@ Route 53 health check
           └── Failover DNS record
 ```
 
-- **On/off switches** hosted redundantly across five AWS Regions.
-- Integrated with Route 53 health checks.
-- Shifts traffic in minutes.
+- **On/off routing controls** have a highly available data plane hosted across multiple AWS Regions.
+- Routing controls can be evaluated by Route 53 routing policies; health checks and application readiness remain separate signals.
+- DNS caching and client behavior still affect observed failover time; test the whole path rather than promising an exact cutover time.
 
 ### Region switch
 
@@ -397,7 +401,7 @@ Service resumes in eu-west-1
 | RTO > 24 hours, RPO hours | Backup and restore |
 | RTO tens of minutes, RPO minutes | Pilot light |
 | RTO minutes, RPO seconds | Warm standby |
-| RTO near zero, RPO near zero | Active-active |
+| Near-zero RTO/RPO | Evaluate active-active only when data semantics, service guarantees, and tested recovery support the target |
 
 ### AWS services for DR
 
@@ -464,10 +468,11 @@ Key staff point: **An AZ is not a single building.** It is multiple data centers
 | **S3** | Regional by default (multi-AZ) | Built-in | Cross-Region Replication (CRR) |
 | **RDS** | Optional | Multi-AZ synchronous standby | Read replicas or snapshots |
 | **Aurora** | Six storage copies across three AZs | Native | Aurora Global Database |
-| **DynamoDB** | Replicated across three AZs | Native | Global Tables |
+| **DynamoDB** | AWS-managed multi-AZ durability | Native | Global Tables (MREC or MRSC) |
 | **EFS** | Regional, replicated across AZs | Native | AWS Backup / DataSync |
 | **ElastiCache** | Optional | Multi-AZ with replicas | Global Datastore (Redis) |
-| **ALB/NLB** | Deployed in enabled AZs | Native | Pair with Route 53 / Global Accelerator |
+| **ALB** | Deployed in enabled AZs | Cross-zone routing enabled by default | Pair with Route 53 / Global Accelerator |
+| **NLB** | Deployed in enabled AZs | Cross-zone routing is configurable; check its default and per-target-group settings | Pair with Route 53 / Global Accelerator |
 
 ---
 
@@ -500,7 +505,7 @@ Compute (Primary + up to 15 Read Replicas)
           └── 3/6 read quorum
 ```
 
-- **Aurora Global Database**: one primary Region, up to five secondary Regions. Replication is **asynchronous**, typically < 1 second.
+- **Aurora Global Database**: one writable primary Region and up to 10 read-only secondary Regions (subject to engine/version limits). Replication is asynchronous and typically under one second, but lag and failover data loss are workload-dependent.
 - Failover to secondary Region requires promoting it (RPO seconds, RTO minutes).
 - **Aurora Serverless v2**: on-demand scaling of compute; storage layer remains distributed.
 
@@ -538,7 +543,7 @@ Define RTO/RPO
    ├── RTO minutes, RPO seconds -> Warm standby
    │      └── Reduced-capacity app running in DR
    │
-   └── RTO/RPO near zero -> Active-active
+   └── Near-zero RTO/RPO -> define write ownership, replication semantics, and tested recovery first
           ├── Partitioned ownership by Region
           ├── Conflict resolution strategy
           └── Global replication/sync

@@ -1,35 +1,53 @@
 # AWS EC2 HA - Runtime + Deployment Sequence
 
+## Deployment flow
+
 ```mermaid
 sequenceDiagram
     autonumber
     participant Dev as Developer
-    participant GH as GitHub Repo (Monorepo FE+BE)
+    participant GH as GitHub repository
     participant GHA as GitHub Actions
-    participant R53 as Route53
-    participant CF as CloudFront/WAF
-    participant ALB as ALB
-    participant EC2 as EC2 ASG (FE+BE)
-    participant Redis as ElastiCache Redis
-    participant DB as Aurora/RDS Multi-AZ
-    participant CW as CloudWatch/X-Ray
+    participant CD as AWS CodeDeploy
+    participant ASG as EC2 Auto Scaling group
+    participant ALB as Application Load Balancer
+    participant CW as CloudWatch
 
-    Dev->>GH: Push commit / open PR
+    Dev->>GH: Push commit or open pull request
     GH->>GHA: Trigger CI pipeline
-    GHA->>GHA: Unit tests, SAST, dependency scan, IaC scan
-    GHA->>EC2: Blue/Green deploy via CodeDeploy
-    GHA->>CW: Emit deployment metrics/events
+    GHA->>GHA: Run tests, security scans, and IaC checks
+    GHA->>CD: Start blue/green deployment
+    CD->>ASG: Provision replacement instances
+    ASG-->>CD: Register healthy instances with target group
+    CD->>ALB: Shift traffic after validation
+    CD-->>GHA: Report deployment status
+    GHA->>CW: Publish deployment annotation
+```
 
-    Note over R53,DB: Runtime traffic path
-    Dev->>R53: Resolve app domain
-    R53->>CF: Route with health/latency policy
-    CF->>ALB: Forward HTTPS request
-    ALB->>EC2: Send to healthy target
-    EC2->>Redis: Get/Set session/cache
-    EC2->>DB: Read/Write transactional data
-    DB-->>EC2: Result
-    EC2-->>ALB: HTTP response
-    ALB-->>CF: Response
-    CF-->>Dev: Cached/Origin response
-    EC2->>CW: Logs, traces, metrics
+## Request flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User as Application user
+    participant R53 as Route 53
+    participant CF as CloudFront and WAF
+    participant ALB as Application Load Balancer
+    participant EC2 as EC2 application instances
+    participant Redis as ElastiCache Redis
+    participant DB as Aurora or RDS Multi-AZ
+    participant CW as CloudWatch and X-Ray
+
+    User->>R53: Resolve application hostname
+    R53-->>User: Return CloudFront distribution name
+    User->>CF: Send HTTPS request
+    CF->>ALB: Forward request to configured origin
+    ALB->>EC2: Route to a healthy target
+    EC2->>Redis: Read or update session/cache
+    EC2->>DB: Read or write transactional data
+    DB-->>EC2: Return query result
+    EC2-->>ALB: Return application response
+    ALB-->>CF: Return origin response
+    CF-->>User: Return cached or origin response
+    EC2->>CW: Publish logs, traces, and metrics
 ```

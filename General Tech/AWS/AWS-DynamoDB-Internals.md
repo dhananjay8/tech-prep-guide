@@ -2,7 +2,7 @@
 
 ## 1. What DynamoDB Actually Is
 
-DynamoDB is a fully managed NoSQL database that partitions data across many storage nodes and exposes a simple key-value / document API. Its value proposition is **predictable single-digit millisecond latency at any scale**, but only when your access patterns align with its design.
+DynamoDB is a fully managed NoSQL database that exposes a key-value/document API and partitions data behind the service boundary. It can deliver single-digit-millisecond performance for many workloads at scale when access patterns, keys, indexes, and capacity are well designed; this is not a latency guarantee for every request or workload.
 
 Key abstractions:
 
@@ -17,62 +17,51 @@ Key abstractions:
 | **Stream** | Ordered change-data-capture log per shard |
 | **TTL** | Automatic item expiry based on an epoch attribute |
 
+Interview caveat: AWS manages DynamoDB's partition placement, storage replicas, routing, and internal write path. Describe the observable guarantees below rather than presenting an inferred leader/quorum implementation as a public contract.
+
 ---
 
-## 2. Write Lifecycle (PutItem / UpdateItem / DeleteItem)
+## 2. Write Behavior (PutItem / UpdateItem / DeleteItem)
 
 ```text
-Client
-  │ PutItem
+Application
+  │ PutItem / UpdateItem / DeleteItem
   ▼
-Request Router
+DynamoDB API
   │
-  ├── Authenticate / authorize
-  ├── Calculate partition hash of partition key
-  ├── Look up partition → storage node mapping in MemDS / metadata cache
-  └── Route request to partition leader storage node
+  ├── Authenticate and authorize the request
+  ├── Route it using the table's managed partitioning
+  ├── Enforce conditions, capacity, and item constraints
+  └── Persist and replicate the change using AWS-managed infrastructure
   ▼
-Storage Node (Leader)
-  │
-  ├── Append write-ahead log (WAL) to local SSD
-  ├── Replicate to two follower storage nodes in different AZs (quorum)
-  ├── Apply to in-memory structures / LSM tree
-  └── Acknowledge success to client
+Successful response
 ```
 
-Replication:
-- DynamoDB stores **three copies** of every item across **three AZs**.
-- Writes succeed when a **quorum** (2 of 3) acknowledges.
-- Reads can be **eventual consistency** or **strong consistency**.
+Durability and consistency:
+- DynamoDB manages replication across multiple Availability Zones; customers do not select storage replicas or a quorum.
+- A successful single-item write is durable according to the service contract. Conditional writes are useful for concurrency control and idempotency.
+- Read consistency is selected per request where supported; it is not a choice between exposed storage replicas.
 
 ### Consistency model
 
 | Read Type | Behavior | Cost |
 |---|---|---|
-| **Eventually consistent** | May lag briefly; reads from any replica | 0.5 RCU |
-| **Strongly consistent** | Reads from the leader after quorum | 1 RCU |
-| **Transactional** | ACID across multiple items/tables | 2x RCU/WCU |
+| **Eventually consistent** | May not reflect a very recent write | 0.5 RCU per 4 KB |
+| **Strongly consistent** | Returns the latest committed value in the Region serving the read; supported on tables and LSIs, not GSIs or Streams | 1 RCU per 4 KB |
+| **Transactional** | ACID transaction semantics within one Region | 2 RCUs/WCUs per 4 KB/1 KB unit |
 
 ---
 
 ## 3. Read Lifecycle (GetItem / Query / Scan)
 
 ```text
-Client
-  │ Query / GetItem
+Application
+  │ GetItem / Query / Scan
   ▼
-Request Router
-  │
-  ├── Calculate partition key hash
-  ├── Look up partition leader
-  ├── Route to leader (for strong) or any healthy replica (for eventual)
-  └── Fetch item(s)
-  ▼
-Storage Node
-  │
-  ├── Check in-memory cache / bloom filters
-  ├── Read from SSTable files on SSD
-  └── Return result
+DynamoDB API
+  ├── Validate the request and its consistency option
+  ├── Read the requested item/key range or scan the table
+  └── Return data subject to the operation's consistency and pagination limits
 ```
 
 Query vs Scan:
@@ -230,10 +219,11 @@ DynamoDB
   └── Release locks
 ```
 
-- Up to 25 items per transaction.
-- No cross-table transactions (same Region only).
+- Up to 100 unique items and 4 MB per transaction.
+- A transaction can span tables in the same AWS account and Region, but not accounts or Regions.
+- Transactions are atomic in the source Region; Global Tables replication does not make them atomic across Regions.
 - **2x WCU / 2x RCU** cost.
-- Conflict with other transactions may cause `TransactionConflict` exceptions.
+- A transaction cannot target the same item more than once; concurrent conflicts and capacity failures can cancel it.
 
 ### Idempotency for retries
 
@@ -289,7 +279,7 @@ Integration patterns:
 
 ## 10. Global Tables (Multi-Region)
 
-DynamoDB Global Tables replicate data across chosen Regions with **active-active** writes.
+DynamoDB Global Tables support multi-Region writes, but consistency and conflict behavior depend on the mode selected at table creation.
 
 ```text
 us-east-1 Table ◄──────────────────► eu-west-1 Table
@@ -298,9 +288,12 @@ us-east-1 Table ◄──────────────────► eu-
   App writes                          App writes
 ```
 
-- Default: **eventual consistency** between Regions.
-- Newer: **Synchronous Global Tables** option for strong cross-Region consistency.
-- Conflict resolution: **last writer wins** based on timestamp.
+| Mode | Replication and consistency | Important constraints |
+|---|---|---|
+| **Multi-Region eventual consistency (MREC)** | Default. Replication is asynchronous; concurrent updates to one item use last-writer-wins conflict resolution. | A strong read in one replica does not guarantee visibility of a write that has not replicated there. |
+| **Multi-Region strong consistency (MRSC)** | Synchronously replicates a write to another Region before acknowledging it; strong reads return the latest version. | Must span exactly three Regions (three replicas or two replicas plus a witness); transactions are unsupported. Check Region/feature eligibility and latency before choosing it. |
+
+Choose the consistency mode before creating the global table; it cannot be changed in place. Neither mode makes a multi-item business transaction atomic across Regions.
 
 ---
 
@@ -377,7 +370,7 @@ At read time, query all N shards and merge results.
 
 ### Transactions
 - Transactions **cannot span Regions**.
-- Transaction items must be within **25 items per TransactWriteItems**.
+- `TransactWriteItems` supports up to **100 unique items** and **4 MB total**.
 - Transaction write sets must be within **4 MB total**.
 
 ### Streams
@@ -386,7 +379,7 @@ At read time, query all N shards and merge results.
 - Lambda pollers share shards; parallelization factor controls concurrency.
 
 ### Global Tables
-- No unique constraints; conflicts resolved by **last writer wins**.
+- No unique constraints. MREC concurrent writes to the same item use **last-writer-wins**; MRSC has different consistency semantics and does not support transaction APIs.
 - Deleting a replica does not delete the table; you must delete the base table.
 
 ---
@@ -540,6 +533,6 @@ Identify Access Patterns
 - "The partition key determines distribution; the sort key determines ordering within a partition."
 - "A hot partition is a key-design problem. Use high-cardinality keys and write sharding where necessary."
 - "A GSI has its own partitions and capacity; an LSI shares the base table's partitions and capacity."
-- "DynamoDB transactions give ACID in one Region; Global Tables give multi-Region active-active with last-writer-wins conflict resolution."
+- "DynamoDB transactions are ACID in one Region. Global Tables are multi-active, but MREC and MRSC have different consistency, conflict, and availability trade-offs."
 - "Never store BLOBs in DynamoDB; use S3 with a pointer and keep metadata in the table."
 - "If you need both durable state and reliable messaging, use the transactional outbox pattern with DynamoDB Streams."

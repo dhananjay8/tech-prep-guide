@@ -1,6 +1,6 @@
 # AWS Staff/Principal Interview Preparation
 
-Production-grade deep-dives and scenario guides for AWS staff-level interviews.
+Production-grade deep-dives and scenario guides for AWS staff-level interviews. Start with requirements and failure boundaries; treat examples as design exercises, not service guarantees.
 
 ## Topic Deep Dives
 
@@ -18,8 +18,8 @@ Production-grade deep-dives and scenario guides for AWS staff-level interviews.
 ## Diagrams & Sequence Walkthroughs
 
 - [AWS Staff-Level Interview Diagram Guide](./aws-staff-interview-diagrams-guide.md) — maps each `.drawio` diagram to interview questions and staff-level talking points.
-- Draw.io diagrams: `aws-*.drawio` files in this folder.
-- Textual sequence flows: `aws-*-sequence.md` files in this folder.
+- [Draw.io architecture diagrams](./aws-staff-interview-diagrams-guide.md#which-diagram-to-use-for-which-interview-question) — open the linked `.drawio` files with diagrams.net or the Draw.io editor.
+- Mermaid sequence walkthroughs: [EC2](./aws-ec2-ha-sequence.md), [ECS Fargate](./aws-ecs-fargate-sequence.md), [EKS](./aws-eks-sequence.md), [Serverless](./aws-serverless-sequence.md), [Event-driven](./aws-event-driven-sequence.md), [Multi-region failover](./aws-multi-region-failover-sequence.md).
 
 ## How to Use
 
@@ -27,3 +27,11 @@ Production-grade deep-dives and scenario guides for AWS staff-level interviews.
 2. Pair it with the corresponding case study and draw.io diagram.
 3. Practice explaining the trade-offs in your own words.
 4. Before an interview, re-read the staff-level sound bites at the end of each topic file.
+5. Use the [cloud architecture interview playbook](../Cloud-Architecture-Interview-Playbook.md) to structure the answer and compare AWS/Azure choices.
+
+## Interview Answer Checklist
+
+- Clarify traffic, SLO, RTO/RPO, consistency, compliance, and operational ownership.
+- Draw one request and one async path; call out trust and data-ownership boundaries.
+- Explain retries, idempotency, overload behavior, deployment rollback, and tested recovery.
+- Verify quotas, service support, and feature constraints in current AWS documentation before quoting exact numbers.

@@ -26,7 +26,7 @@ Use these Mermaid sequence diagrams to explain **runtime behavior**, **deploymen
 
 | Diagram | Best Use Case | Key Concepts |
 |---|---|---|
-| [Azure-AKS-Sequence.md](../Azure/Azure-AKS-Sequence.md) | Azure enterprise AKS deployment | Front Door + App Gateway, AKS ingress, progressive rollout |
+| [Azure-AKS-Sequence.md](../Azure/Azure-AKS-Sequence.md) | Azure enterprise AKS deployment | Front Door Private Link, Gateway API ingress, private AKS rollout and recovery |
 | [FortiRecon-Event-Pipeline-Sequence.md](../companies/FortiRecon/FortiRecon-Event-Pipeline-Sequence.md) | Security data platform design | Discovery, stream correlation, idempotent alerting |
 
 ## Staff-Level Prompt Checklist

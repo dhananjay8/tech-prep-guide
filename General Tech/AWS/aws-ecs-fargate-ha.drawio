@@ -7,13 +7,13 @@
                 <mxCell id="vpc" value="VPC 10.30.0.0/16" style="rounded=1;whiteSpace=wrap;html=1;strokeWidth=2;strokeColor=#6c8ebf;fillColor=#dae8fc;" parent="1" vertex="1">
                     <mxGeometry x="260" y="120" width="1320" height="900" as="geometry"/>
                 </mxCell>
-                <mxCell id="pub" value="Public Subnets (AZ-A/B)\nALB + NAT GW per AZ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d79b00;" parent="1" vertex="1">
+                <mxCell id="pub" value="Public Subnets (AZ-A/B)&#xa;ALB + NAT GW per AZ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d79b00;" parent="1" vertex="1">
                     <mxGeometry x="310" y="190" width="1220" height="170" as="geometry"/>
                 </mxCell>
-                <mxCell id="priv" value="Private App Subnets\nECS Fargate Services (FE + BE)\nAuto Scaling on CPU/RPS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                <mxCell id="priv" value="Private App Subnets&#xa;ECS Fargate Services (FE + BE)&#xa;Auto Scaling on CPU/RPS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
                     <mxGeometry x="310" y="390" width="1220" height="270" as="geometry"/>
                 </mxCell>
-                <mxCell id="data" value="Private Data Subnets\nAurora Multi-AZ + ElastiCache + OpenSearch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
+                <mxCell id="data" value="Private Data Subnets&#xa;Aurora Multi-AZ + ElastiCache + OpenSearch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
                     <mxGeometry x="310" y="700" width="1220" height="210" as="geometry"/>
                 </mxCell>
                 <mxCell id="user" value="Users" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
@@ -25,10 +25,10 @@
                 <mxCell id="cf" value="CloudFront + WAF + Shield" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
                     <mxGeometry x="30" y="250" width="230" height="70" as="geometry"/>
                 </mxCell>
-                <mxCell id="alb" value="ALB\nTLS/ACM + OIDC auth" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+                <mxCell id="alb" value="ALB&#xa;TLS/ACM + OIDC auth" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
                     <mxGeometry x="530" y="220" width="240" height="85" as="geometry"/>
                 </mxCell>
-                <mxCell id="ecs" value="ECS Services\nfrontend-service + api-service\nTask defs + rolling/canary" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+                <mxCell id="ecs" value="ECS Services&#xa;frontend-service + api-service&#xa;Task defs + rolling/canary" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
                     <mxGeometry x="500" y="400" width="280" height="110" as="geometry"/>
                 </mxCell>
                 <mxCell id="db" value="Aurora" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
@@ -40,7 +40,7 @@
                 <mxCell id="repo" value="GitHub Monorepo FE+BE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
                     <mxGeometry x="30" y="470" width="220" height="70" as="geometry"/>
                 </mxCell>
-                <mxCell id="gha" value="GitHub Actions + OIDC\nBuild/Test/Scan\nPush image to ECR\nDeploy via CodeDeploy/ECS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+                <mxCell id="gha" value="GitHub Actions + OIDC&#xa;Build/Test/Scan&#xa;Push image to ECR&#xa;Deploy via CodeDeploy/ECS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
                     <mxGeometry x="20" y="560" width="260" height="120" as="geometry"/>
                 </mxCell>
                 <mxCell id="ecr" value="ECR (Image Signing + Lifecycle)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">

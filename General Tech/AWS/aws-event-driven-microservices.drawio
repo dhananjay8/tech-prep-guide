@@ -7,20 +7,20 @@
         <mxCell id="edge" value="Route53 + CloudFront + WAF" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d79b00;" vertex="1" parent="1"><mxGeometry x="180" y="115" width="260" height="70" as="geometry"/></mxCell>
         <mxCell id="api" value="API Gateway / ALB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1"><mxGeometry x="470" y="115" width="210" height="70" as="geometry"/></mxCell>
 
-        <mxCell id="svc" value="Command Service\n(ECS/EKS/Lambda)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="730" y="110" width="230" height="80" as="geometry"/></mxCell>
-        <mxCell id="outbox" value="Outbox Table + CDC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="1000" y="110" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="svc" value="Command Service&#xa;(ECS/EKS/Lambda)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="730" y="110" width="230" height="80" as="geometry"/></mxCell>
+        <mxCell id="outbox" value="Transactional Outbox&#xa;Relay publishes committed events" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="1000" y="110" width="200" height="80" as="geometry"/></mxCell>
 
-        <mxCell id="bus" value="EventBridge Bus\nSchema Registry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1"><mxGeometry x="1250" y="110" width="220" height="90" as="geometry"/></mxCell>
+        <mxCell id="bus" value="EventBridge Bus&#xa;Rules route versioned events" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1"><mxGeometry x="1250" y="110" width="220" height="90" as="geometry"/></mxCell>
 
-        <mxCell id="orders" value="Orders Consumer\nSQS FIFO + DLQ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="620" y="280" width="230" height="90" as="geometry"/></mxCell>
-        <mxCell id="billing" value="Billing Consumer\nSQS + Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="900" y="280" width="210" height="90" as="geometry"/></mxCell>
-        <mxCell id="notif" value="Notification Consumer\nSNS + SES/SMS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="1160" y="280" width="230" height="90" as="geometry"/></mxCell>
+        <mxCell id="orders" value="Orders Consumer&#xa;SQS FIFO + DLQ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="620" y="280" width="230" height="90" as="geometry"/></mxCell>
+        <mxCell id="billing" value="Billing Consumer&#xa;SQS + Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="900" y="280" width="210" height="90" as="geometry"/></mxCell>
+        <mxCell id="notif" value="Notification Consumer&#xa;SNS + SES/SMS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="1160" y="280" width="230" height="90" as="geometry"/></mxCell>
 
-        <mxCell id="cqrs" value="Read Model Builders\nDynamoDB/OpenSearch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="710" y="430" width="280" height="85" as="geometry"/></mxCell>
+        <mxCell id="cqrs" value="Read Model Builders&#xa;DynamoDB/OpenSearch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="710" y="430" width="280" height="85" as="geometry"/></mxCell>
         <mxCell id="query" value="Query API (CQRS read path)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="1040" y="430" width="260" height="85" as="geometry"/></mxCell>
 
-        <mxCell id="sec" value="Cross-cutting controls\nIdempotency keys, retries, DLQ replay, trace correlation IDs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1"><mxGeometry x="380" y="560" width="650" height="90" as="geometry"/></mxCell>
-        <mxCell id="ci" value="GitHub Actions\nContract tests + event schema checks" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="40" y="300" width="260" height="95" as="geometry"/></mxCell>
+        <mxCell id="sec" value="Cross-cutting controls&#xa;Idempotency keys, retries, DLQ replay, trace correlation IDs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1"><mxGeometry x="380" y="560" width="650" height="90" as="geometry"/></mxCell>
+        <mxCell id="ci" value="GitHub Actions&#xa;Contract tests + event schema checks" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="40" y="300" width="260" height="95" as="geometry"/></mxCell>
 
         <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="user" target="edge"><mxGeometry relative="1" as="geometry"/></mxCell>
         <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="edge" target="api"><mxGeometry relative="1" as="geometry"/></mxCell>
@@ -30,8 +30,7 @@
         <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;dashed=1;html=1;endArrow=block;" edge="1" parent="1" source="bus" target="orders"><mxGeometry relative="1" as="geometry"/></mxCell>
         <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;dashed=1;html=1;endArrow=block;" edge="1" parent="1" source="bus" target="billing"><mxGeometry relative="1" as="geometry"/></mxCell>
         <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;dashed=1;html=1;endArrow=block;" edge="1" parent="1" source="bus" target="notif"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;dashed=1;html=1;endArrow=block;" edge="1" parent="1" source="orders" target="cqrs"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;dashed=1;html=1;endArrow=block;" edge="1" parent="1" source="billing" target="cqrs"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;dashed=1;html=1;endArrow=block;" edge="1" parent="1" source="bus" target="cqrs"><mxGeometry relative="1" as="geometry"/></mxCell>
         <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="query" target="api"><mxGeometry relative="1" as="geometry"/></mxCell>
         <mxCell id="interviewEvent" value="Interview Focus: exactly-once illusions, idempotency keys, event contracts, replay strategy, and DLQ SLOs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1"><mxGeometry x="380" y="30" width="830" height="60" as="geometry"/></mxCell>
         <mxCell id="legendStd" value="Legend&#xa;Orange = Edge / Ingress&#xa;Green = Compute / Workloads&#xa;Purple = Data Stores&#xa;Blue = Control Plane / CI-CD&#xa;Red = Security / Observability" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#666666;fillColor=#f5f5f5;" vertex="1" parent="1"><mxGeometry x="30" y="680" width="610" height="130" as="geometry"/></mxCell>

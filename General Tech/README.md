@@ -14,6 +14,16 @@ cloud, DevOps, Kubernetes, Python, and testing.
 - [AWS Staff/Principal Interview Prep](./AWS/README.md)
 - [AWS Notes](./AWS/)
 
+## Azure
+
+- [Azure Cloud Architecture Interview Prep](./Azure/README.md)
+- [Azure AKS Enterprise Diagram](./Azure/Azure-AKS-Enterprise.drawio)
+- [Azure Architecture Interview Guide](./Azure/Azure-Architecture-Interview-Guide.md)
+
+## Cloud Architecture
+
+- [Cloud Architecture Interview Playbook](./Cloud-Architecture-Interview-Playbook.md) — a vendor-neutral design framework and AWS/Azure service vocabulary.
+
 ## Kubernetes
 
 - [Kubernetes Topic Notes](./Kubernetes/README.md)
