@@ -2,18 +2,25 @@
 
 ## 1. GitOps Principles
 
-- **Git is the single source of truth** for cluster state (declarative, versioned, reviewed via PR).
-- An in-cluster operator **pulls and reconciles** — no `kubectl apply` from a CI laptop.
-- Pull > push: CI builds/pushes the image; GitOps updates manifests and the cluster converges — cluster credentials never leave the cluster.
+- Strictly, **GitOps means a pull controller continuously reconciles declared
+  Git state**. A reviewed CI/CD pipeline that reads Git and applies changes is
+  a controlled deployment, not continuous pull reconciliation.
+- Git stores the approved cluster settings. Changes are declarative, reviewed,
+  and versioned.
+- A controller inside the cluster reads Git and applies changes. CI does not
+  need direct cluster credentials.
+- CI builds the image; the Git change selects its version. The controller
+  then brings the cluster in line with Git.
 
 ```text
-Code push → CI (test, build, scan, push image:tag)
-         → GitOps repo PR updates manifest (image.tag / kustomization)
-         → ArgoCD detects diff → syncs cluster
-         → health/status reported back; drift reverted (self-heal)
+Code change → CI builds and checks image
+           → reviewed Git change selects image version
+           → ArgoCD notices change and updates cluster
+           → report health; correct manual drift if self-heal is enabled
 ```
 
-Repo topology (from source): **app repo** (code + Dockerfile) · **centralized config repo** (shared values/policies) · **env/overlays repo** (dev/stage/prod desired state). Keep them separate — blast radius + review ownership differ.
+Teams often keep application code, shared settings, and environment settings
+in separate repositories. This makes ownership and review clearer.
 
 ---
 
@@ -27,19 +34,34 @@ ArgoCD Control Plane (in-cluster, namespace: argocd)
   └── argocd-applicationset-controller (generates Applications dynamically from Git dirs, clusters, PRs, matrices)
 ```
 
-- **Application** = (`source`: repo + revision + path/chart) → (`destination`: cluster + namespace) + `project` (RBAC/cluster/repo boundary) + `syncPolicy`.
-- **Sync modes**: **manual** (click/CLI) vs **auto** (`syncPolicy.automated`, with `prune: true` to delete removed git objects + `selfHeal: true` to overwrite live manual edits).
-- **Sync Phases & Hooks**:
-  1. `PreSync` (e.g., DB schema migration Job or backup before rollout)
-  2. `Sync` (applies main manifests, ordered by **`argocd.argoproj.io/sync-wave: "-1" → "0" → "1"`** — lower numbers go first, waiting for health before advancing)
-  3. `PostSync` (smoke tests, Slack notification)
-  4. `SyncFail` (alert/cleanup hook if sync fails)
+- **Application**: says which Git revision and folder to use, and which
+  cluster and namespace to update. A project sets its access boundaries.
+- **Sync modes**: manual or automatic. With `prune: true`, ArgoCD deletes
+  objects removed from Git. With `selfHeal: true`, it can undo manual cluster
+  changes.
+- **Sync phases and hooks**:
+  1. `PreSync`: run a task before the main update, such as a migration job.
+  2. `Sync`: apply the main Kubernetes files. Sync waves set their order;
+     lower numbers run first.
+  3. `PostSync`: run checks or send a notification after the update.
+  4. `SyncFail`: run an alert or cleanup task when sync fails.
 - **App of Apps vs `ApplicationSet`**:
-  - **App of Apps**: an `Application` pointing to a folder of child `Application` YAMLs (classic pattern).
-  - **`ApplicationSet`**: single CRD using **Generators** (`List`, `Cluster`, `Git directory/file`, `Pull Request`, `Matrix`) to template and spawn 100s of `Application`s across clusters/environments automatically without writing N YAML files.
-- **How ArgoCD Compares to Qualys `etmaudit` / `quadfile` / `qhelm` Flow**:
-  - In pure ArgoCD, `argocd-repo-server` renders Helm/Kustomize and `application-controller` orders resources via **Sync Waves**.
-  - In Qualys pods (`sjc01-eng-p19`, `sjc01-eng-p43`), the 3-repo GitOps model (`etm-audit-<service>` → `etm-audit-config-mgmt` → `etmaudit`) achieves the same declarative Git source of truth: **`quadfile.yaml`** (`wait_for_success: true`, `timeout: 700s`) plays the role of `ApplicationSet` + Sync Waves, while the controlled Ansible/Jenkins pod runner syncs **Consul KV**, applies **Vault `qvaultsi` HCL policies**, and executes **`qhelm` (`helm upgrade --install`)** with layered base + pod values overrides.
+  - **App of Apps**: one Application points to a folder of other Application
+    files.
+  - **`ApplicationSet`**: creates many Applications from a list, cluster
+    inventory, Git folders, or pull requests. This avoids writing each one
+    by hand.
+- **How ArgoCD differs from the Qualys `qhelm` / `quadfile` flow**:
+  - ArgoCD keeps checking the cluster against Git. It can correct drift or
+    remove deleted objects when those options are enabled.
+  - In the Qualys pattern reviewed here, a Jenkins/Ansible runner applies
+    reviewed changes. It reads `quadfile.yaml` and calls `qhelm`, with
+    Consul settings, Vault policy, and Helm values.
+  - `quadfile` is a release list, not an ArgoCD ApplicationSet or sync-wave
+    controller. `wait_for_success` is set for each release. A later failure
+    may leave earlier releases updated.
+  - Call this a **controlled deployment backed by Git** unless ArgoCD or Flux
+    actually manages the service.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -58,56 +80,74 @@ spec:
 ```
 
 ```bash
-argocd app list | get api | sync api | history api | rollback api 5
+argocd app list
+argocd app get api
+argocd app history api
+# Mutating operations require the platform's authorized workflow.
+# argocd app sync api
+# argocd app rollback api 5
 ```
 
-## 3. Progressive Delivery with GitOps
+## 3. Gradual Rollouts with GitOps
 
-- Argo Rollouts adds **canary/blue-green** CRDs: sync new version → shift 5% → analysis template queries Prometheus (error rate, latency) → promote or auto-rollback.
-- Rollback in GitOps = **git revert** (or `argocd rollback` for emergency, then reconcile git after — don't leave desired state lying).
+- Argo Rollouts supports canary and blue-green releases. Send a small share
+  of traffic to the new version, check Prometheus metrics, then increase
+  traffic or stop the rollout.
+- In GitOps, normally revert the Git change to roll back. If emergency
+  tooling changes the live cluster, bring Git back in sync afterward.
 
-## 4. GitOps vs Push CD (X vs Y)
+## 4. GitOps vs Push Deployment
 
-| | Push (Jenkins → kubectl) | Pull (ArgoCD/Flux) |
-| --- | -------------------------- | -------------------- |
-| Cluster creds | CI needs cluster access | None needed outside cluster |
-| Drift handling | Invisible until next deploy | Continuously detected/reverted |
-| Audit | CI logs | Git history = audit trail |
-| Rollback | Re-run old pipeline | `git revert` |
-| Multi-cluster | Credential sprawl | One agent per cluster, same repo |
+| | Direct push | Qualys controlled pipeline | ArgoCD/Flux pull |
+| --- | --- | --- | --- |
+| Who needs cluster access? | CI runner | Deployment runner | Controller inside the cluster |
+| How is drift found? | Usually on the next deploy | Do not assume it is checked continuously | Controller can check continuously |
+| What is the audit trail? | CI logs | Review and runner logs | Git history and controller status |
+| How to roll back? | Rerun an approved version | Review and apply the previous settings | Revert the Git change |
+| Multiple clusters | CI needs access to each cluster | Configure runners and approvals per environment | Use the controller/fleet setup |
 
 ### ArgoCD vs Flux
 
 | | ArgoCD | Flux |
 | --- | ------ | ---- |
-| Model | App-centric CRDs + UI + RBAC SSO | GitOps-Toolkit controllers, composable, CLI-first |
-| Multi-source apps | Yes (v2.5+ multiple sources) | Native kustomize/helm controllers |
-| Secrets integration | External Secrets, SOPS plugin, ArgoCD Vault Plugin | Native SOPS/Mozilla + KMS |
-| Fleet mgmt | `ApplicationSet` / app-of-apps | `Flux` per cluster + shared repo conventions |
-| Fit | Teams wanting visibility/UI | Minimalist, operator-heavy shops |
+| Main style | Application objects, UI, and built-in access controls | A set of smaller controllers, often managed with CLI |
+| Helm/Kustomize | Supports both | Supports both |
+| Secrets | Use a supported plugin or external secret tool | Commonly use SOPS and a key-management service |
+| Many clusters | ApplicationSet or App of Apps | Shared Git layout and controllers per cluster |
+| Often chosen by | Teams that want a UI and app view | Teams that prefer smaller, composable tools |
 
-**Secrets in GitOps** (every interview): never commit plaintext — Sealed Secrets (encrypted-by-cluster-key, committed safely), SOPS+KMS (encrypted yaml in git), or External Secrets Operator (git holds only a reference; value pulled at sync from Vault/AWS SM/etc.).
+**Secrets in GitOps:** never commit plaintext secrets. Options include
+Sealed Secrets, SOPS with a key-management service, or External Secrets
+Operator. Git should contain encrypted values or references, not the secret
+itself.
 
 ## 5. Interview Q&A
 
 **Q: Someone edits live state (`kubectl edit`) — what happens?**
-ArgoCD shows OutOfSync; with `selfHeal` it reverts within ~seconds. Answer the follow-up: use `ignoreDifferences` for HPA-managed replicas or autoscaling-owned fields.
+ArgoCD shows the app is out of sync. If `selfHeal` is on, it restores the
+Git version. Use `ignoreDifferences` for fields that another controller owns,
+such as HPA-managed replicas.
 
 **Q: Secrets in a GitOps repo?**
-Never plaintext — Sealed Secrets, SOPS+KMS, or External Secrets Operator; the manifest in git references, not contains, the secret.
+Never store plaintext secrets. Use Sealed Secrets, SOPS, or External Secrets
+Operator. Keep only an encrypted value or reference in Git.
 
 **Q: Failed sync — now what?**
-`argocd app get` shows the failing resource + k8s events; fix-forward via PR (preferred) or `argocd app rollback`, then reconcile git so source matches cluster.
+Run `argocd app get` and read the Kubernetes events to find the failed
+resource. Prefer a reviewed Git fix. If emergency rollback tooling is used,
+update Git afterward.
 
 **Q: ArgoCD vs Flux?**
-ArgoCD = UI + app-centric UX, richer ecosystem; Flux = GitOps-toolkit CRDs, lighter, CLI/composable. Same principles; pick by team taste.
+ArgoCD has an application-focused UI. Flux uses smaller, composable
+controllers and a CLI-first workflow. Both use Git to manage cluster state;
+choose the one that fits the team's needs.
 
 ---
 
 ## 6. Recall — Sound Bites
 
-- "CI produces artifacts; GitOps converges environments — separate jobs."
-- "Pull model: cluster pulls truth; no kubeconfigs in CI."
+- "CI builds artifacts; GitOps applies approved environment settings."
+- "In a pull model, the cluster reads Git; CI does not need its credentials."
 - "`git revert` is the rollback button."
-- "selfHeal + prune = the cluster fights manual edits — use ignoreDifferences deliberately."
-- "One LB of truth: out-of-sync is a question, not a mystery."
+- "`selfHeal` and `prune` can undo manual changes or remove deleted objects."
+- "When Git and the cluster differ, inspect the difference before acting."

@@ -2,20 +2,29 @@
 
 ## 1. What Each Solves
 
-- **Helm** = package manager for K8s: chart = templated manifests + `values.yaml` + releases/upgrades/rollback.
-- **Kustomize** = template-free overlay tool built into kubectl (`kubectl apply -k`): base manifests + per-env patches.
+- **Helm** packages an app as a chart. A chart contains Kubernetes templates
+  and default values; Helm installs it and tracks its releases.
+- **Kustomize** edits plain Kubernetes YAML for each environment. It uses a
+  shared base plus small changes called overlays, and is built into `kubectl`.
 
 ---
 
 ## 2. Helm
 
 ```bash
+# Sandbox/authorized environment examples; do not use as a Qualys production deploy path.
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm install web bitnami/nginx -n prod --create-namespace
 helm upgrade web bitnami/nginx -f values-prod.yaml --set image.tag=1.2.3
-helm list -n prod | helm history web -n prod | helm rollback web 3 -n prod
+helm list -n prod
+helm history web -n prod
 helm template web ./chart -f values-dev.yaml     # render without installing
 ```
+
+These commands are for a sandbox or another authorized environment. For
+managed Qualys pods, submit a reviewed change through the deployment process.
+The platform uses `qhelm` and `quadfile` to apply the values and release order.
+Do not run `helm install`, `upgrade`, or `rollback` directly against a pod.
 
 ```yaml
 # templates/deployment.yaml (Go templates)
@@ -36,17 +45,29 @@ image: { repository: myapp, tag: "1.0.0" }
 resources: { requests: { cpu: 100m, memory: 128Mi } }
 ```
 
-Hooks (`helm.sh/hook: pre-install` etc.) run jobs around install/upgrade — e.g. DB migrations. `--wait` gates on readiness. `helm dependency` for sub-charts.
+Helm hooks run jobs before or after an install/upgrade, such as a database
+migration. `--wait` makes Helm wait for resources to become ready.
+`helm dependency` manages subcharts.
 
 ### Helm 3 Internals (Architecture, Release State & 3-Way Merge)
 
-- **Helm 2 vs Helm 3**: Helm 2 ran an in-cluster server (**Tiller**) with `cluster-admin` by default (huge security risk). **Helm 3 is 100% client-side** — it uses the caller's `kubeconfig` / RBAC directly.
-- **Where does Helm store release state?** Inside the target namespace as gzipped, base64-encoded **Kubernetes Secrets** of type `helm.sh/release.v1` named `sh.helm.release.v1.<release>.v<N>` (`kubectl get secrets -l owner=helm`).
-  - *Gotcha*: Each revision creates a new Secret; set `--history-max 10` so hundreds of revisions don't bloat etcd (`1MiB` secret limit!).
-- **Helm 3 Three-Way Strategic Merge Patch**: Helm 2 only diffed the *old chart manifest* vs *new chart manifest* (ignoring live `kubectl edit` drift). Helm 3 diffs **old manifest + live cluster state + new manifest**, so live changes are properly reconciled on `helm upgrade`.
-- **Hooks & Hook Weights**: Annotations `helm.sh/hook: pre-upgrade,post-upgrade`, ordered by `helm.sh/hook-weight: "-5"` (ascending), cleaned up via `helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded`.
-- **Named Templates (`_helpers.tpl`)**: `{{- define "app.labels" -}}` included via `{{- include "app.labels" . | nindent 4 }}` (`include` returns a string you can pipe to `nindent`; `template` cannot be piped).
-- **Enterprise / Qualys Central-Helm (`qhelm` + `quadfile`) Pattern**: Instead of maintaining 50 separate chart copies, services use a shared `nexus/central-helm-chart` (or umbrella chart in `etm-audit-config-mgmt`) and pass layered `-f base-values-override.yml -f pod-values-override.yml` orchestrated via `quadfile.yaml`.
+- **Helm 2 and Helm 3**: Helm 2 used an in-cluster server called Tiller.
+  Helm 3 removed Tiller and uses the caller's Kubernetes credentials.
+- **Release history**: Helm stores each release revision as a Kubernetes
+  Secret in the target namespace. Each upgrade adds another Secret. Limit
+  history with `--history-max` so old revisions do not build up.
+- **How upgrades compare changes**: Helm considers the old chart, the live
+  Kubernetes settings, and the new chart. This helps it handle changes made
+  directly to the cluster.
+- **Hooks and weights**: Hooks run Jobs at named points, such as before an
+  upgrade. Hook weights set their order; delete policies control cleanup.
+- **Named templates**: Put reusable YAML in `_helpers.tpl`. Use `include`
+  when you need to pass the rendered text through a function such as
+  `nindent`; `template` cannot be piped this way.
+- **Qualys `qhelm` + `quadfile`**: an approved runner processes a reviewed
+  release list and applies shared and pod-specific values. Wait and rollback
+  options apply to each release; the whole list is not one all-or-nothing
+  change.
 
 ## 3. Kustomize
 
@@ -72,7 +93,9 @@ patches:
     target: { kind: Deployment, name: app }
 ```
 
-Also: `configMapGenerator`/`secretGenerator` (hash suffixes auto-trigger rollout on change — a favorite detail), `commonLabels`, `namespace:`.
+Kustomize can also create ConfigMaps and Secrets. It adds a hash to the
+generated name, so a changed file can trigger a new Deployment. You can also
+set common labels and a namespace.
 
 ---
 
@@ -80,38 +103,49 @@ Also: `configMapGenerator`/`secretGenerator` (hash suffixes auto-trigger rollout
 
 | | Helm | Kustomize |
 | --- | ------ | ----------- |
-| Mechanism | Go templates + values | Patch overlays, no templating |
-| Package/registry | Yes (chart repos, OCI) | No |
-| Lifecycle mgmt | Releases, rollback, hooks | None — it's just `apply` |
-| Built into kubectl | No (`helm` CLI) | Yes (`-k`) |
-| Logic power | Conditionals, loops — can become spaghetti | Declarative only |
-| Fits | Distributing apps, 3rd-party charts, release management | Env variants of your own YAML |
-| ArgoCD/Flux | Supported | Supported |
+| Question | Helm | Kustomize |
+| --- | --- | --- |
+| How does it work? | Templates and values | A base plus YAML patches |
+| Does it package apps? | Yes; charts can be stored in a registry | No |
+| Does it track releases? | Yes; includes history and hooks | No; it renders files for `kubectl` or another tool |
+| Is it built into `kubectl`? | No; use Helm CLI | Yes; use `kubectl -k` |
+| Best for | Sharing and installing apps | Changing your YAML for each environment |
+| Works with ArgoCD/Flux? | Yes | Yes |
 
-Common combo: **Helm for the package, Kustomize for last-mile per-env patches** (ArgoCD supports both, even chained).
+Teams can use Helm for the app package and Kustomize for small environment
+changes. ArgoCD supports both.
 
 ---
 
 ## 5. Interview Q&A
 
 **Q: Rollback strategy?**
-`helm rollback web 3` restores release revision — but the DB schema may have moved; pair with rollback-compatible migrations. Kustomize path: `git revert` + re-apply (GitOps).
+In an authorized standalone Helm environment, `helm rollback web 3` restores
+an earlier release. Check the database first; its schema may not work with
+the older app. For Qualys, restore the previous image/settings through the
+reviewed deployment process. For Kustomize/GitOps, revert the reviewed Git
+change.
 
 **Q: How do you keep dev/prod configs apart?**
-Helm: one chart, per-env `values-<env>.yaml` (or `helm template` output reviewed in CI). Kustomize: shared base + overlays. Either way, never hand-edit live manifests.
+Use one Helm chart with separate `values-<env>.yaml` files, or a shared
+Kustomize base with one overlay per environment. Review changes in CI; do not
+edit live production settings by hand.
 
 **Q: Secret handling with Helm/Kustomize?**
-Don't put real secrets in charts/values — use `secrets-generator`-style indirection, SOPS/sealed-secrets, or External Secrets Operator at runtime.
+Do not put secret values in charts or values files. Use an approved secret
+tool, such as SOPS, Sealed Secrets, or External Secrets Operator.
 
 **Q: Drift between chart and cluster?**
-Someone ran `kubectl edit` or autoscaler touched replicas — Helm won't know until next upgrade. GitOps (ArgoCD) detects and optionally self-heals drift.
+A manual `kubectl edit` can make the live cluster differ from Git. Helm may
+not correct it until the next upgrade. ArgoCD can detect the difference and
+correct it if self-healing is enabled.
 
 ---
 
 ## 6. Recall — Sound Bites
 
-- "Helm = package + release manager; Kustomize = overlay renderer."
-- "`helm template` renders locally; `helm upgrade --install` is idempotent CI pattern."
-- "configMapGenerator hash = config change auto-rolls the Deployment."
+- "Helm packages apps; Kustomize applies small changes to plain YAML."
+- "`helm template` renders settings; an approved runner deploys them."
+- "A generated ConfigMap name changes when its content changes."
 - "Never store real secrets in `values.yaml` or committed overlays."
 - "GitOps wants declarative render (Kustomize); distribution wants packages (Helm)."

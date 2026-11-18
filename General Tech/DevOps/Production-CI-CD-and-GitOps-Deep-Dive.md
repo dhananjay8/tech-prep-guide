@@ -1,32 +1,37 @@
-# Production CI/CD, GitOps & Helm Deep Dive — Staff/Principal Interview Guide
+# Production CI/CD, GitOps & Helm — Interview Guide
 
 ---
 
 ## 1. The Three Independent Systems
 
-A production-grade Continuous Deployment (CD) pipeline at companies like Google, Netflix, Uber, Amazon, Microsoft, Stripe, and Datadog is far more than running `kubectl apply` after a build.
+Deploying a service safely takes more than running `kubectl apply` after a
+build. The work is usually split into three parts:
 
-There are **three independent systems** working together:
+1. **Continuous integration (CI)** builds and checks the code.
+2. **Artifact storage** keeps the tested packages and reports.
+3. **Continuous delivery/deployment (CD)** releases the chosen version safely.
 
-1. **Continuous Integration (CI)** — Build and validate the software.
-2. **Artifact Management** — Store immutable artifacts (JARs, images, SBOMs).
-3. **Continuous Deployment/Delivery (CD)** — Deploy those artifacts safely.
+> Keep build and deployment separate so you can change or roll back a release
+> without rebuilding the code.
 
-> Staff point: **CI builds trust; CD applies change. Separating them lets you roll back a deployment without rebuilding code.**
+CD may use a controller such as ArgoCD/Flux, or an approved pipeline that
+applies reviewed settings. The Qualys `qhelm`/`quadfile` example below uses a
+pipeline; it does not mean ArgoCD/Flux is installed.
 
 ---
 
 ## 2. Helm vs Kubernetes
 
-One of the biggest misconceptions is that **Helm replaces Kubernetes**. It does not.
+Helm and Kubernetes do different jobs:
 
-| Tool | Role | Analogy |
-| --- | --- | --- |
-| **Helm** | Package manager and templating engine that generates Kubernetes YAML | JVM compiles Java to bytecode |
-| **Kubernetes** | Runtime that executes the YAML and manages container lifecycle | CPU executes machine code |
-| **ArgoCD/Flux** | GitOps controller that reconciles desired state with cluster | Continuous sync agent |
+| Tool | Job |
+| --- | --- |
+| **Helm** | Turns a chart and values into Kubernetes settings |
+| **Kubernetes** | Starts and manages the application |
+| **ArgoCD/Flux** | Watches Git and keeps the cluster aligned with it |
+| **Qualys `qhelm` / `quadfile`** | Applies an approved, ordered release list through a pipeline |
 
-Helm's job is to render environment-specific YAML from charts and values. Kubernetes' job is to run it.
+Helm creates the settings; Kubernetes uses them to run the service.
 
 ---
 
@@ -35,7 +40,7 @@ Helm's job is to render environment-specific YAML from charts and values. Kubern
 ```text
 Git Repository
     │
-    ├── git push / PR merge to master
+    ├── git push / PR merge to main
     │
     ▼
 CI Pipeline Starts
@@ -46,23 +51,21 @@ CI Pipeline Starts
     ├── Static analysis (SAST)
     ├── Security scans (deps, container, IaC, secrets)
     ├── Build binary
-    ├── Build Docker image
+    ├── Build OCI image with the approved builder
     ├── Scan + sign image
     └── Push image to registry (ECR/ACR/GCR/Harbor)
     │
     ▼
-Update deployment repository
-(Helm values / Kustomize overlays with immutable image tag)
+Reviewed environment change selects the artifact
+    │
+    ├── Pull model: ArgoCD / Flux detects desired-state drift
+    │                 and renders/applies Helm or Kustomize
+    │
+    └── Controlled-apply model: approved runner reads the release plan
+                                and invokes platform deployment tooling
     │
     ▼
-GitOps controller detects drift
-(ArgoCD / Flux)
-    │
-    ▼
-Helm template render
-    │
-    ▼
-Kubernetes manifests generated
+Kubernetes manifests rendered and applied
     │
     ▼
 Kubernetes API Server
@@ -96,17 +99,18 @@ Old ReplicaSet scaled down
 ```text
 Developer
     │
-    ├── git push origin master
+    ├── git push origin main
     │
     or
     │
     └── Merge Pull Request
     │
     ▼
-Master branch updated
+Protected source branch updated
 ```
 
-Nothing has been built yet. The commit SHA (e.g., `74ae12bc`) becomes the identity of everything downstream.
+Nothing has been built yet. The commit SHA (for example, `74ae12bc`) links
+this source revision to its build.
 
 ---
 
@@ -118,7 +122,7 @@ Nothing has been built yet. The commit SHA (e.g., `74ae12bc`) becomes the identi
 git checkout 74ae12bc
 ```
 
-Workspace is created and tied to this exact commit.
+The build uses exactly this commit.
 
 ### 5.2 Dependency restore
 
@@ -137,7 +141,7 @@ pytest
 go test
 ```
 
-Pipeline stops immediately if tests fail.
+The pipeline stops if a required test fails.
 
 ### 5.4 Static analysis
 
@@ -154,7 +158,7 @@ Pipeline stops immediately if tests fail.
 | Type | Input | Tool examples |
 | --- | --- | --- |
 | Dependency scanning | `package.json`, `pom.xml`, etc. | Snyk, Dependabot, OWASP Dependency-Check |
-| Container scan | Docker image | Trivy, Clair, Grype |
+| Container scan | OCI image | Trivy, Clair, Grype |
 | IaC scan | Terraform/CloudFormation/CDK | Checkov, tfsec, Terrascan |
 | Secrets scan | Repo history | TruffleHog, GitLeaks |
 
@@ -166,15 +170,17 @@ npm run build
 mvn package
 ```
 
-Produces: binary, JAR, `dist/` directory, or executable.
+This creates an application package, such as a binary, JAR, or `dist/`
+directory.
 
-### 5.7 Docker build
+### 5.7 Build the container image
 
 ```bash
-docker build -t myapp:74ae12bc .
+podman build -t myapp:74ae12bc .
 ```
 
-Key rule: production never uses `latest`. Tags are immutable:
+Do not use `latest` as the production version. Prefer an image digest. A tag
+is only immutable if the registry prevents it from changing. Example tags:
 
 ```text
 myapp:74ae12bc
@@ -184,7 +190,8 @@ myapp:build-1048
 
 ### 5.8 Container scan
 
-The image itself is scanned. If a base layer contains a vulnerable `openssl`, the build fails.
+Scan the full image, including its base layers. A vulnerable package such as
+`openssl` may cause the scan to fail.
 
 ### 5.9 Image signing
 
@@ -194,7 +201,7 @@ The image itself is scanned. If a base layer contains a vulnerable `openssl`, th
 | Notary | Docker Content Trust v1 |
 | Sigstore/Cosign keyless | Identity-based signing |
 
-Protects against tampered images, fake registry pushes, and supply-chain attacks.
+Signing helps verify who built the image and whether it changed afterward.
 
 ### 5.10 Push to registry
 
@@ -205,18 +212,20 @@ Protects against tampered images, fake registry pushes, and supply-chain attacks
 | Google GAR | GCP |
 | Harbor | On-prem / multi-cloud |
 
-At this point: **build is complete; nothing has been deployed.**
+At this point, the build is complete. Nothing has been deployed yet.
 
 ### 5.11 Artifact promotion — build once, deploy everywhere
 
-The same immutable artifact flows through environments — **never rebuilt per env**:
+Promote the same tested image to each environment. Do not rebuild it for each
+environment:
 
 ```text
 myapp:74ae12bc  →  dev deploy  →  qa deploy  →  prod deploy
                  (same digest, only values/overlays differ)
 ```
 
-Rebuilding per environment breaks the "what we tested is what we ship" guarantee and creates digest drift. Promotion = updating which tag/digest each env's deployment repo points to.
+Only the environment settings should change. Keep the image tag or digest the
+same so the image tested is the image deployed.
 
 ---
 
@@ -224,14 +233,16 @@ Rebuilding per environment breaks the "what we tested is what we ship" guarantee
 
 ### 6.1 Deployment repository
 
-Many organizations keep a separate repo:
+Many teams keep application code and deployment settings in separate
+repositories:
 
 - `app-code` — application logic.
 - `deployment-config` — desired production state.
 
-Why? Application teams cannot accidentally change production infrastructure.
+This makes it easier to review who can change the application and who can
+change production settings.
 
-The CI pipeline updates the deployment repo with the new image tag:
+The release process proposes a reviewed change that selects the tested image:
 
 ```yaml
 # Before
@@ -241,11 +252,13 @@ image: myapp:63ea90
 image: myapp:74ae12bc
 ```
 
-Then it pushes that change.
+Follow the environment's review rules. Do not assume CI can approve or deploy
+the change on its own.
 
-### 6.2 GitOps controller
+### 6.2 Apply model: pull controller or controlled runner
 
-ArgoCD or Flux polls the deployment repo, detects drift, and reconciles.
+**Pull model:** ArgoCD or Flux watches the deployment repo. It compares Git
+with the cluster and applies changes according to its settings.
 
 ```text
 Git Repository
@@ -262,23 +275,34 @@ Kubernetes YAML
 kubectl apply
 ```
 
-Developers never run Helm manually in production; the controller does.
+**Controlled pipeline:** a reviewed deployment pipeline reads the release
+plan and calls the platform's Helm tool. In the Qualys pattern, Jenkins or
+Ansible processes `quadfile.yaml` through `qhelm`. The platform also handles
+Consul settings and Vault policies. Unlike ArgoCD/Flux, this pipeline does
+not continuously check for drift. A release list is not all-or-nothing; each
+release has its own wait and rollback settings.
 
-### 6.3 Environment promotion rings
+Use an approved controller or deployment runner in production, not a
+developer laptop.
+
+### 6.3 Promote through environments
 
 ```text
-dev (auto-sync on merge) → qa (auto or PR) → staging → prod (PR + approval)
+dev → qa → staging → prod
 ```
 
-- Each env is a separate path/branch in the deployment repo; promotion = a PR copying the verified tag forward.
-- Gates tighten per ring: dev = none, qa = automated test pass, staging = soak + sign-off, prod = human approval + change window.
-- **Secrets never ride this flow** — each env resolves its own via Vault/External Secrets at apply time.
+- Each environment may have its own folder, branch, or repository. Promote
+  the same tested image; do not rebuild it for each environment.
+- Define the checks and approvals for each environment. Do not assume that
+  every team uses the same order or automatic deployment rules.
+- Keep secret values out of Git and build artifacts. Store only references or
+  access rules there; get secret values from the approved secret service.
 
 ---
 
 ## 7. Where Helm Comes In
 
-### 7.1 Helm is a YAML generator
+### 7.1 Helm creates Kubernetes settings
 
 ```text
 Helm Chart
@@ -320,7 +344,8 @@ Rendered output:
 image: myapp:74ae12bc
 ```
 
-Helm's job is finished after rendering.
+`helm template` only renders the files. An authorized Helm command or
+deployment controller applies them to the cluster.
 
 ### 7.2 Helm chart structure
 
@@ -340,7 +365,7 @@ my-chart/
 
 ### 7.3 Why Helm exists
 
-Without Helm, every microservice would duplicate 700+ lines of YAML for:
+Without Helm, teams would repeat Kubernetes settings for:
 
 - namespace
 - replicas
@@ -354,7 +379,8 @@ Without Helm, every microservice would duplicate 700+ lines of YAML for:
 - ingress
 - tolerations
 
-Helm turns that into reusable templates with environment-specific values:
+Helm puts those settings in reusable templates and lets each environment
+provide different values:
 
 ```yaml
 replicas: {{ .Values.replicas }}
@@ -390,15 +416,15 @@ kubectl apply
 
 ## 8. Kubernetes Receives YAML
 
-1. API Server stores the `Deployment`.
-2. Deployment Controller creates a new `ReplicaSet`.
-3. Scheduler assigns pods to nodes.
-4. Kubelet downloads the image and starts the container.
+1. The API server stores the Deployment settings.
+2. A controller creates a ReplicaSet, which manages the Pods.
+3. The scheduler chooses a node for each Pod.
+4. The node downloads the image and starts the container.
 5. Startup probe passes.
 6. Readiness probe passes.
 7. Service begins routing traffic to Ready pods.
 
-Old and new ReplicaSets coexist during the rollout.
+Old and new ReplicaSets may run at the same time during an update.
 
 ---
 
@@ -429,13 +455,15 @@ For 10 pods:
 Repeat until 10 new
 ```
 
-Result: zero-downtime rollout.
+This may avoid interruption if there is enough capacity, probes work,
+shutdown is graceful, and both versions can run together. A rolling update
+alone does not guarantee zero downtime.
 
 ---
 
 ## 10. Post-Deployment Verification
 
-Modern CD pipelines do not stop at `kubectl rollout status`. They verify the application is actually healthy:
+Do not stop at `kubectl rollout status`. Check that the application works:
 
 - Smoke tests against critical endpoints.
 - Synthetic transactions (login, checkout).
@@ -443,30 +471,32 @@ Modern CD pipelines do not stop at `kubectl rollout status`. They verify the app
 - Log analysis for new exceptions.
 - Alert status from monitoring systems.
 
-If checks fail, the pipeline can automatically roll back to the previous version.
+If a check fails, stop promotion and follow the rollback policy. Automatic
+rollback works only if the platform has configured and tested it.
 
 ---
 
 ## 11. Common Deployment Models
 
-| Model | How it works | Best for |
+| Model | How it works | Often used when |
 | --- | --- | --- |
-| **Helm + CI** | CI runs `helm upgrade --install` directly | Small teams, simpler environments |
-| **Helm + ArgoCD (GitOps)** | CI updates image tag in deployment repo; ArgoCD reconciles | Most modern Kubernetes platforms |
-| **Kustomize + ArgoCD** | CI updates image tags in Kustomize overlays; ArgoCD applies | Teams preferring native Kubernetes tooling |
-| **Raw Kubernetes manifests** | CI/CD applies plain YAML with `kubectl apply` | Smaller projects or simple deployments |
+| **Helm + CI** | An authorized CI runner applies a Helm chart | The environment is small and simple |
+| **Helm + ArgoCD/Flux** | A pull controller applies the reviewed image version | The team wants continuous reconciliation |
+| **Kustomize + ArgoCD** | ArgoCD applies environment-specific YAML patches | The team prefers plain Kubernetes YAML |
+| **Raw manifests** | CI applies plain YAML | The app has few deployment settings |
+| **Controlled release runner** | An approved pipeline applies an ordered release plan | A managed platform controls deployments |
 
-### 11.1 Anti-patterns (interviewers ask "what goes wrong?")
+### 11.1 Common mistakes
 
-| Anti-pattern | Why it bites |
+| Mistake | Why it is risky |
 | --- | --- |
-| Rebuilding per environment | Digest drift; you test one artifact, ship another |
-| `:latest` tags in prod | Mutable → no reliable rollback target |
-| `kubectl apply`/`helm upgrade` from laptops | Untracked drift; no audit trail |
-| Secrets in pipeline logs or values files | Permanent exposure in CI history |
-| CI cluster creds with cluster-admin | One leaked kubeconfig = total compromise |
-| Rollback by editing live state | Git truth diverges; next sync reverts or conflicts |
-| Deploy == release coupling | No canary/flag path → every deploy is a launch |
+| Rebuild for each environment | The deployed image may differ from the tested one |
+| Use `:latest` in production | The tag can move, making rollback unclear |
+| Deploy from a laptop | The change may not be reviewed or recorded |
+| Put secrets in logs or values | Anyone with log/repo access may see them |
+| Give CI broad cluster access | A leaked credential could expose the cluster |
+| Change live settings only | Git may overwrite the change or become misleading |
+| Deploy and release every change at once | There is no gradual rollout or feature switch |
 
 ---
 
@@ -487,16 +517,16 @@ CI Pipeline
     ├── Static analysis
     ├── Security scans
     ├── Build binary
-    ├── Build Docker image
+    ├── Build OCI image with the approved builder
     ├── Scan image
     ├── Sign image
     └── Push image to registry
     │
     ▼
-Update deployment repository
+Reviewed environment change selects the artifact
     │
     ▼
-ArgoCD / Flux
+Pull controller or controlled deployment runner
     │
     ▼
 Helm template rendering
@@ -534,47 +564,55 @@ Old ReplicaSet scaled down
 
 ---
 
-## 13. Staff-Level Sound Bites
+## 13. Key Points
 
-- "CI proves the artifact is good; CD decides when and how it reaches production."
-- "Immutable image tags let you roll forward and backward without rebuilding."
-- "Helm is a YAML generator, not a deployment engine."
-- "GitOps turns the deployment repo into the single source of truth and audits every change."
-- "Post-deploy verification is the real gate; `kubectl apply` success does not mean the app is healthy."
-- "Image signing, SBOMs, and dependency scans are supply-chain non-negotiables at scale."
+- "CI checks the image; CD decides when to deploy it."
+- "Promote the same tested image instead of rebuilding it."
+- "Helm creates Kubernetes settings; Kubernetes runs the service."
+- "GitOps uses reviewed Git changes to manage the cluster."
+- "`kubectl apply` can succeed even when the app is unhealthy."
+- "Scans, image signatures, and build records help verify software."
 
 ---
 
 ## 14. Quick Reference Table
 
-| Step | Output | Failure mode |
+| Step | Result | Common problem |
 | --- | --- | --- |
-| Source control | Commit SHA | Merge conflicts, untested code |
-| CI tests | Test report | Build blocked |
-| Static analysis | Quality report | Security/style issues |
-| Security scan | CVE report | Vulnerable deps/images |
-| Image build | Immutable tagged image | Build errors |
-| Image signing | Signed digest | Supply-chain risk |
-| Registry push | Stored artifact | Auth/storage failure |
-| GitOps reconcile | Desired state applied | Drift, sync failure |
-| Kubernetes rollout | New pods ready | Probe failures, scheduling errors |
-| Post-deploy verification | Healthy signal | Rollback triggered |
+| Source control | Commit ID | Conflicts or untested changes |
+| CI tests | Test report | A test fails |
+| Code checks | Quality report | A rule fails |
+| Security scan | Vulnerability report | Risky package or image |
+| Image build/sign | Image and signature | Build or signing failure |
+| Registry publish | Stored image | Access or storage failure |
+| Deployment | Updated cluster | Settings or sync failure |
+| Kubernetes rollout | Ready Pods | Probe or scheduling failure |
+| Post-deploy check | Service health | Stop or roll back release |
 
 ---
 
 ## 15. Interview Follow-Ups
 
 **Q: Why three systems (CI / artifacts / CD) instead of one pipeline?**
-Decoupling = independent scaling, rollback without rebuild, and different trust boundaries — CD never sees source, CI never touches prod.
+Separate systems can scale and have different permissions. You can also roll
+back to an earlier image without rebuilding it. CI does not need production
+access.
 
 **Q: How does a commit reach prod?**
-SHA → test+scan → immutable image:sha → registry → deploy-repo tag update → GitOps render → K8s rollout → probe-gated traffic → verify. (Recite the §3 sequence.)
+Track the commit through tests and scans, build its image, store it, approve
+the environment change, deploy it, and check the running service. The exact
+deployment step depends on the platform.
 
 **Q: GitOps vs traditional push CD?**
-Pull model: no cluster creds in CI, continuous drift correction, git = audit. Push model: simpler, faster feedback loop, but creds sprawl and drift is invisible.
+With GitOps, an in-cluster controller reads Git and can correct drift. With
+push CD, a pipeline applies changes directly; it needs cluster access and may
+not notice drift between deployments.
 
 **Q: How do you do a canary in this world?**
-Argo Rollouts/Flagger CRD in the chart → analysis template queries Prometheus (error rate, p99) → auto-promote or abort. The deploy repo never changes shape — the rollout controller handles traffic math.
+Use a rollout controller to send a small share of traffic to the new version.
+Check Prometheus for errors and latency, then increase traffic or stop.
 
 **Q: Pipeline took the prod env down — RCA?**
-Bisect the flow: bad artifact (scan gap?) vs bad values (deploy repo diff) vs bad apply (sync error) vs bad runtime (probe/resource). Each stage has its own blame surface — that's the point of the separation.
+Check each step in order: Was the image bad? Were the environment settings
+wrong? Did the deploy step fail? Did the app fail after it started? Compare
+the run IDs, logs, and health checks to find the first failure.

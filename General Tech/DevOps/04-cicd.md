@@ -1,14 +1,16 @@
 # CI/CD, GitOps & Production Deployment — Interview Notes
 
-## 1. CI vs Continuous Delivery vs Continuous Deployment
+## 1. CI, Delivery, and Deployment
 
-| | CI | Continuous Delivery | Continuous Deployment |
-| --- | ---- | -------------------- | ---------------------- |
-| Extent | Build + test on every commit | …+ automated release to staging; prod needs manual approval | …+ fully automated to prod, no gate |
-| Trust requirement | Green tests | + release candidate verified | + progressive delivery, auto-rollback |
-| Typical blocker | Broken build | Product sign-off | Risk appetite / compliance |
+| | Continuous integration (CI) | Continuous delivery | Continuous deployment |
+| --- | --- | --- | --- |
+| What it means | Build and test each change | Keep each passing change ready to release | Automatically release approved changes |
+| Production release | Not included | Usually needs approval | Happens automatically under set rules |
+| Main concern | Does the code pass? | Is the release ready? | Can production accept it safely? |
 
-**Three independent systems** (staff point): **CI builds trust** (build + validate → immutable artifact), **Artifact Management stores it** (registry + SBOM + signature), **CD applies change** (deploy safely). Separating them lets you roll back a deployment **without rebuilding code**.
+Think of three separate parts: CI builds and checks the software, an artifact
+store keeps the versioned package, and CD deploys it. Keeping these steps
+separate lets you roll back without rebuilding the software.
 
 ---
 
@@ -16,32 +18,40 @@
 
 ```text
 git push / PR merge
-  → CI: checkout → deps → tests → SAST → scans → build → image → scan+sign → push registry
-  → deployment repo updated (immutable image tag/digest)
-  → GitOps controller (ArgoCD/Flux) detects drift → renders manifests (Helm/Kustomize)
-  → apiserver → Deployment controller → new ReplicaSet → scheduler → kubelet
-  → startup probe → readiness probe → Service routes traffic
-  → post-deploy smoke tests / metrics validation
-  → old ReplicaSet scaled down
+  → CI: checkout → dependencies → tests/analysis/scans → binary + OCI image
+  → publish versioned artifacts and reports (subject to each gate)
+  → reviewed environment change selects the artifact
+  → CD handoff is platform-specific:
+       ArgoCD/Flux pull reconciliation
+       OR controlled deployment runner (Qualys-style Jenkins/Ansible + qhelm)
+  → chart/overlay render → Kubernetes API → controllers → Pods
+  → startup/readiness checks → Service endpoints → ingress
+  → smoke tests, metrics/log validation, and release decision
 ```
 
-The commit SHA becomes the identity of everything downstream — tag images with it (`myapp:74ae12bc`, `v2.14.6`, `build-1048`). **Never `latest` in production.**
+Track the source commit through the build, image, and deployment. Prefer an
+image digest or a tag the registry prevents from changing. Do not use
+`latest` as the production version; it is not a reliable rollback target.
 
 ---
 
 ## 3. CI Pipeline Anatomy
 
-| Stage | Examples | Fails build when |
+| Stage | Examples | Common failure |
 | ------- | ---------- | ------------------ |
-| Checkout | `git checkout <sha>` | — |
-| Deps | `npm ci`, `pip install -r req.txt`, `mvn dependency:resolve`, `go mod download` | lockfile mismatch |
-| Tests | `npm test`, `pytest`, `go test`, `mvn test` | any failure — pipeline stops here |
-| Static analysis | SonarQube, ESLint, Pylint, golangci-lint, SpotBugs/PMD | quality gate breach |
-| Security scans | **Deps**: Snyk/Dependabot/OWASP DC · **Image**: Trivy/Grype/Clair · **IaC**: Checkov/tfsec · **Secrets**: TruffleHog/GitLeaks | CVEs over threshold, leaked secrets |
-| Build | `go build`, `npm run build`, `mvn package` | compile errors |
-| Image | `docker build -t myapp:<sha> .` → scan → sign | base-layer CVEs fail build |
-| Sign | cosign / Notary / Sigstore keyless | — |
-| Push | ECR / ACR / GAR / Harbor / Nexus | auth/storage failure |
+| Get the code | `git checkout <sha>` | Wrong or unavailable revision |
+| Install dependencies | `npm ci`, `pip install`, `mvn`, `go mod download` | Lockfile or download error |
+| Test | `npm test`, `pytest`, `go test`, `mvn test` | A test fails |
+| Check code | SonarQube, ESLint, Pylint, SpotBugs | A quality rule fails |
+| Scan | Snyk, Trivy, Checkov, TruffleHog | Vulnerability or secret found |
+| Build | `go build`, `npm run build`, `mvn package` | Compile/build error |
+| Build image | `podman build` or approved OCI builder | Build error or policy failure |
+| Sign and publish | Cosign; ECR, ACR, GAR, Harbor, or Nexus | Signing, access, or storage error |
+
+Check the final result, not only the successful stages. A build may create an
+image and pass its image scan, then fail a later license or security check.
+The whole run is still failed. Do not promote the image just because it exists
+in the registry.
 
 ```yaml
 # GitHub Actions skeleton
@@ -62,8 +72,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t app:${{ github.sha }} .
-      - run: docker push app:${{ github.sha }}
+      # Example only: this runner must have the approved OCI builder and registry auth.
+      - run: podman build -t app:${{ github.sha }} .
+      - run: podman push app:${{ github.sha }}
 ```
 
 ### Jenkins / GitLab / Actions equivalents
@@ -75,13 +86,16 @@ jobs:
 | GitLab CI | `.gitlab-ci.yml` | stages → jobs | GitLab runners (tags) |
 | Azure DevOps | `azure-pipelines.yml` | stages → jobs | Microsoft/self-hosted agents |
 
-### Jenkins Deep Dive (Architecture, Pipelines & Enterprise/Qualys Pattern)
+### Jenkins Deep Dive (Architecture, Pipelines & Enterprise Pattern)
 
 ```text
-Jenkins Controller (Master — UI, scheduler, credentials, webhook receiver; NO builds on controller!)
-  ├── Inbound JNLP / SSH static agents (VM build pools labeled e.g. 'linux-jdk17', 'docker-builder')
+Jenkins Controller (UI, scheduler, credentials, webhook receiver; normally no builds here)
+  ├── Inbound JNLP / SSH static agents (VM build pools labeled e.g. 'linux-jdk17', 'oci-builder')
   └── Kubernetes Plugin dynamic pod agents (spins up ephemeral pod per build, destroys on finish)
 ```
+
+The controller schedules the job. A worker runs the commands. Use the job
+number to match the controller record with the worker's console log.
 
 | Concept | Declarative Pipeline (`pipeline { ... }`) | Scripted Pipeline (`node { ... }`) |
 | --- | --- | --- |
@@ -89,28 +103,33 @@ Jenkins Controller (Master — UI, scheduler, credentials, webhook receiver; NO 
 | **Validation** | Validated before execution; supports Restart-from-Stage | Validated at runtime; maximum flexibility |
 | **Enterprise standard** | **Default choice** + **Jenkins Shared Libraries (`@Library`)** | Legacy or complex dynamic matrix logic |
 
-- **Jenkins Shared Libraries (`vars/*.groovy`) — Enterprise & Qualys Pattern**: Instead of duplicating 300 lines of Groovy across 200 microservices, teams use a central Shared Library (`generic-java-template-with-scripts` / `generic-binaries-template`). Each service repo contains only:
-  1. A 3-line `Jenkinsfile` invoking the shared template and pointing to `properties.yaml`.
-  2. `properties.yaml` (`jdk: JDK_17`, `maven: apache-maven-3.6.3`, `is-docker-scan-enabled: true`).
-  3. `jenkins_build_scripts/build_script.sh` & `post_build_script.sh` (runs `mvn clean deploy`, writes `VERSION.pkg` metadata, calls `build-scripts/build-image.sh`, pushes image + RC bundle to Nexus/Artifactory).
+- **Shared libraries** (`vars/*.groovy`) let teams reuse pipeline code instead
+  of copying it into every service. A service may only need a short
+  `Jenkinsfile`, a `properties.yaml` file, and scripts for its build and
+  publishing steps.
 
 ### Failed-build handling
 
-Fail fast (cheapest checks first) → block merge (required status checks) → notify author w/ logs → quarantine flakes via auto-retry + ticket → keep main green (red main = stop-the-line event).
+Run quick checks first. Block merges when required checks fail. Share the logs
+with the author and track flaky tests instead of hiding them with retries. Keep
+the main branch healthy; stop and investigate when it turns red.
 
 ---
 
 ## 4. CD Handoff — Helm, GitOps, Deployment Repo
 
-### Helm vs Kubernetes (kill this misconception)
+### Helm and Kubernetes do different jobs
 
 | Tool | Role | Analogy |
 | --- | --- | --- |
-| **Helm** | Package manager + templating → *generates* K8s YAML | Compiler → bytecode |
-| **Kubernetes** | Runtime executing the YAML | CPU → machine code |
-| **ArgoCD/Flux** | Reconciles git desired state ↔ cluster | Continuous sync agent |
+| Tool | What it does |
+| --- | --- |
+| **Helm** | Fills in chart templates and creates Kubernetes settings |
+| **Kubernetes** | Runs and manages the application |
+| **ArgoCD/Flux** | Watches Git and keeps the cluster aligned with it |
+| **Qualys `qhelm` / `quadfile`** | A reviewed pipeline applies an ordered list of Helm releases; it is not an ArgoCD/Flux controller |
 
-Helm exists because every service would otherwise duplicate 700+ lines of YAML (replicas, probes, resources, ingress, SA, tolerations…). One chart + per-env values:
+Helm lets teams reuse one chart and change its values for each environment:
 
 | Environment | replicas | cpu |
 | --- | --- | --- |
@@ -118,67 +137,100 @@ Helm exists because every service would otherwise duplicate 700+ lines of YAML (
 | Staging | 3 | 500m |
 | Production | 20 | 2 |
 
-### Deployment repo pattern
+### Deployment configuration
 
-- `app-code` repo ≠ `deployment-config` repo — app teams can't accidentally change prod infra.
-- CI updates `image: myapp:74ae12bc` (better: `@sha256:` digest — tags can drift, digests can't) in the deploy repo and pushes.
-- ArgoCD/Flux polls, detects drift, renders (`helm template` / `kustomize build`), applies. Developers never run Helm against prod.
-- **Common deployment models**: `helm upgrade` from CI (small teams) · Helm+ArgoCD (modern default) · Kustomize+ArgoCD · raw manifests (simple projects).
+- Keep application code separate from deployment settings when that fits the
+  team's ownership model. Select a tested image version for each environment.
+- **ArgoCD/Flux:** a controller watches Git, spots differences, and applies
+  the configured Helm or Kustomize settings.
+- **Controlled pipeline:** an approved runner reads the release list and
+  calls the platform's Helm tool. Qualys `qhelm`/`quadfile` is one example.
+  This is not continuous drift correction.
+- Other models include Helm from an authorized CI runner or plain Kubernetes
+  manifests. Do not deploy to production from a personal laptop.
+
+In the Qualys path, `quadfile` sets the release order. `wait_for_success`
+applies to each release, not the whole list. If a later release fails, earlier
+ones may already be updated. Check the release record and runner logs as well
+as the Pods.
 
 ---
 
-## 5. Deployment Strategies (X vs Y)
+## 5. Deployment Strategies
 
 | Strategy | Mechanism | Rollback | Cost | Best for |
 | ---------- | ----------- | ---------- | ------ | ---------- |
-| **Rolling** (K8s default) | Replace pods incrementally (`maxSurge`, `maxUnavailable`) | `rollout undo` — fast | None extra | Most stateless services |
-| **Blue-Green** | Two full envs; LB switches all traffic at once | Instant — switch back | **2× infra** | Big-bang cutovers |
-| **Canary** | Route 5→25→50→100%; measure errors/latency each step | Stop traffic increase | Small extra | Risky changes, metric validation |
-| **Feature flags** | Deploy dark, enable at runtime | Kill switch — instant | Flag tech debt | Decoupling release from deploy |
+| Strategy | How it works | Good for |
+| --- | --- | --- |
+| **Rolling** | Replace Pods a few at a time | Most stateless services |
+| **Blue-green** | Run old and new versions side by side, then switch traffic | Changes that need a quick switch back |
+| **Canary** | Send a small share of traffic to the new version, then increase it if healthy | Higher-risk changes |
+| **Feature flag** | Deploy code while the feature is off; enable it later | Separating deployment from release |
 
-Rolling update for 10 pods (`maxSurge:1, maxUnavailable:1`): `10 old → 11 total → 1 new ready → 1 old removed → repeat`. Zero-downtime needs `maxUnavailable:0` + readiness gates.
+With 10 Pods, a rolling update may start one new Pod, wait for it to become
+ready, then remove one old Pod and repeat. This can avoid downtime, but only
+with enough capacity, correct probes, and compatible old/new versions.
 
 ### Progressive delivery / canary done right
 
-Soak at each step (`5%→10m, 25%→30–60m, 50%+`). Gate on **user-impacting signals**, not just HTTP 200: p99 latency, error budget burn, memory growth slope, DB pool saturation, GC/thread count. Argo Rollouts + Prometheus analysis templates automate promote/rollback.
+Pause at each traffic step and check user-facing signals, not just HTTP 200:
+tail latency, error rate, memory growth, database connections, and JVM health.
+Tools such as Argo Rollouts can query Prometheus and promote or stop a canary.
 
 ---
 
 ## 6. Post-Deployment Verification
 
-`kubectl rollout status` ≠ healthy. Real gates: smoke tests on critical endpoints · synthetic transactions (login/checkout) · metrics validation (error rate, latency, CPU/mem) · log scan for new exceptions · alert state. Failure → automatic rollback.
+`kubectl rollout status` only says whether the rollout finished; it does not
+prove the service works. Also run a quick user-path test, check errors and
+latency, review new logs, and check alerts. Automatic rollback happens only
+when the platform is configured to do it. Otherwise use the approved rollback
+process.
 
 ---
 
-## 7. Enterprise Three-Repo Recipe (from Qualys-style pattern — generalizes)
+## 7. Three-Repository Managed-Environment Pattern
 
-| Repo | Role |
+This is a common Qualys-style ownership split, not a requirement that every
+service use three repositories or publish every artifact type.
+
+| Repository | What it contains |
 | --- | --- |
-| **Service repo** | Code, tests, Dockerfile, CI scripts, bundled consul/helm config skeleton |
-| **Central config repo** (`config-mgmt`) | Aggregates every service's config into versioned `consul`/`helm`/`ansible` release artifacts; holds **base** values overrides (probes, resources, Vault env, Java opts) |
-| **Env/deployment repo** (per pod/region) | Environment subprojects + release manifest (chart/version/namespace/`wait_for_success`/`timeout`), pod-specific values overrides, consul overrides, vault policies |
+| **Service** | Application code, tests, image build, and service-specific config |
+| **Shared config** | Defaults and the config packages the build actually includes |
+| **Environment/deployment** | Image version, release order, pod settings, and secret-access rules |
 
 ### Sequence
 
-1. **Service repo**: code + Dockerfile + CI; config packaged via build plugin (`config/consul/`, `config/helm/`); actuator probes (`/actuator/health/{liveness,readiness}` on mgmt port); secrets at runtime from Vault — never in repo.
-2. **CI builds**: JAR → image tagged `registry/repo/name:version[-build]` → consul/helm zips published as versioned artifacts.
-3. **Config repo**: register service version property; base values override uses `@service.version@` token → token-replaced at config-release build; `helm lint --with-subcharts` gate.
-4. **Env repo**: environment subproject declares `config-mgmt` version deps (`cacheChangingModulesFor(0)` so SNAPSHOTs refresh); release entry (chart+version+namespace, `wait_for_success: true` for services others depend on — **ordering matters**: deploy foundational services before consumers); pod overrides layer on top of base.
-5. **Pod-wide common values**: ingress host, consul/vault hosts, Kafka bootstrap, proxy, region/endpoints — one `common-values-override`.
-6. **Vault policy** per service: only the secret paths it needs (`capabilities = ["read"]`).
-7. Push to the pod branch → controlled runner applies `helm upgrade --install` → validate pods, health endpoints, ingress.
+1. Build and test the service. Add probes, resource settings, graceful
+   shutdown, and database changes that work with old and new versions.
+2. CI publishes the image and any config packages. Record the result of every
+   test and security check.
+3. The shared config repo records the service version and packages the files
+   declared by the build. Check the rendered Helm settings.
+4. The environment repo selects the image/config versions and adds pod
+   settings. Review release order and each wait/timeout option.
+5. Keep regular settings separate from secrets. Use the approved secret
+   provider and limit each service's access.
+6. Submit the environment change for review. After approval, the controlled
+   runner applies it through the platform's Helm tool.
+7. Check the release record, every Pod/image, health, dependencies, logs,
+   ingress, and a user-facing test.
 
-**Layered config model**: base chart defaults → central config overrides → pod-specific overrides → runtime env. Each layer narrows, never duplicates.
+**Settings layers**: chart defaults → shared values → environment settings
+→ runtime config and secrets. Check the actual order; platforms may apply
+these layers differently.
 
-### Native ArgoCD GitOps vs Qualys Controlled GitOps (`qhelm` / `quadfile`)
+### ArgoCD Pull Reconciliation vs Qualys Controlled Apply (`qhelm` / `quadfile`)
 
-| Dimension | **Pure ArgoCD Pull GitOps** | **Qualys Controlled GitOps (`etmaudit` + `quadfile` + `qhelm`)** |
+| Question | **ArgoCD / Flux** | **Qualys controlled pipeline** |
 | --- | --- | --- |
-| **Source of truth** | Git deployment repo (`overlays/<env>`) | Git 3-repo hierarchy (`service` → `etm-audit-config-mgmt` → `etmaudit` pod branch) |
-| **Who renders & applies** | In-cluster `argocd-repo-server` + `argocd-application-controller` | Controlled Jenkins/Ansible pod runner executing `qhelm` (`helm upgrade --install`) |
-| **Ordering across services** | Sync waves (`argocd.argoproj.io/sync-wave: "1"`) + hooks (`PreSync`, `Sync`, `PostSync`) | Explicit sequential list in **`quadfile.yaml`** with `wait_for_success: true` & `timeout: 700s` |
-| **Config & Secret wiring** | External Secrets Operator / Sealed Secrets + ConfigMaps | **Consul KV sync** (`etmaudit/apps/<svc>`) + **Vault AppRole** (`qvaultsi` HCL policy) + `qhelm` overrides |
-| **How to frame in interviews** | "Both enforce Git as single source of truth, immutable versioned artifacts, and layered Helm overrides; ArgoCD reconciles via an in-cluster pull controller, whereas the Qualys pod runner couples Helm release orchestration (`quadfile`) with Consul KV and Vault policy provisioning in one atomic pod rollout." | — |
+| What starts a deploy? | A change in watched Git, based on its sync settings | An approved pipeline run |
+| Who applies it? | An in-cluster controller | Jenkins/Ansible runner using `qhelm` |
+| How are services ordered? | Controller-specific waves and health rules | `quadfile` order; wait settings apply per release |
+| How are settings/secrets handled? | ConfigMaps and the chosen secret tool | Consul settings, Vault access rules, and Helm values |
+| Does it correct drift continuously? | It can, when configured | Do not assume it does |
+| Is the whole release atomic? | Depends on the controller and application | No; earlier releases may stay updated if a later one fails |
 
 Deep dives: [CI/CD and GitOps](./Production-CI-CD-and-GitOps-Deep-Dive.md),
 [enterprise deployment](./Enterprise-Microservice-Deployment-Recipe.md),
@@ -189,67 +241,71 @@ Deep dives: [CI/CD and GitOps](./Production-CI-CD-and-GitOps-Deep-Dive.md),
 
 ## 8. Rollback Patterns
 
-| Path | Mechanism | Caveat |
+| Path | What to do | Important note |
 | --- | --- | --- |
-| Primary | `git revert` in env repo → controller syncs previous tag | Slowest but always clean |
-| Fast | `helm rollback` / `kubectl rollout undo` / `argocd rollback` | **Immediately reconcile git** afterward or source-of-truth lies |
-| DB-aware | expand/contract migrations keep both versions readable | Never roll back across a contract phase |
+| Normal | Restore the previous version in reviewed settings and rerun the approved pipeline | Keeps a clear audit trail |
+| Emergency | Use only the platform's approved emergency tool | Update the reviewed settings afterward; Qualys uses the reviewed environment change |
+| Database-aware | Keep old and new app versions compatible during a migration | Do not roll back after removing data or fields the old version needs |
 
-**Poison-pill rollback**: if the old version can't read new state, rollback corrupts data → versioned contracts (`min_readable`/`max_writable`), pre-deploy guard blocks incompatible rollback, dual-format write window guarantees N-version compat.
+**Unsafe rollback:** an old app may not understand data written by a new app.
+Use versioned data formats and compatibility checks. During a transition,
+support both formats until the old app version is no longer running.
 
 ---
 
 ## 9. Production Ops Scenarios (staff-level)
 
-| Scenario | Key technique | Guardrail |
+| Scenario | Response | Safety check |
 | --- | --- | --- |
-| Regional outage + urgent auth patch | **Break-glass**: ephemeral M-of-N-approved SA (auto-expires ~2h) + **signed change bundle** (digest + values + SLSA/Cosign attestation) + offline in-region runner | TTL, admission policy still denies unsigned images, post-facto PR back to git |
-| Rogue infra change (manual SG edit) | Drift detection → **quarantine mode**: open "drift PR" importing live diff; adopt-or-revert after review | Time-boxed grace, auto-ticket, planned drain for revert |
-| Jenkins → GitOps migration deadlock | Compat adapter: Jenkins keeps building but must publish signed image+SBOM+values delta; thin GitOps layer converts to overlays | Conformance scorecard, exec dashboard, exceptions path |
-| Monorepo PR queue (60m→<10m) | Test-impact analysis + remote build cache (Bazel semantics) + dynamic shards + flaky-test quarantine + dev preflight | Cap concurrency to keep cost flat |
-| 24-cluster rollout, #11 fails | Per-cluster waves w/ independent success criteria; mark degraded, continue; no global rollback below threshold | Pin desired version per cluster, auto-remediation PR |
-| A→B→C dependency, C's contract changes | Contract tests + versioned APIs; DAG-aware orchestrator blocks A until compatible B,C live (or flag-guarded) | Provider publishes contract, consumers test vs simulator |
-| Canary passes 5%, leaks at 25% | Long soak + SLO gates beyond HTTP 200 (mem slope, pool saturation) | Auto-rollback w/ conn draining; freeze deploys |
-| Schema break at 10k w/s | **Expand/Contract**: add+backfill → flip reads → drop old; gates on lag/parity | Rollback plan per phase |
-| Typosquatted dependency | Allowlisted sources + checksum pinning + SBOM diff-on-diff + hermetic builds (egress only to mirrors) | SLSA provenance, signature required at deploy |
-| Malicious push to registry | Admission denies unsigned images; registry write = CI service accounts only; digest pinning + `:latest` banned | Running digests map back to Git SHA + PR approval |
+| Regional outage and urgent security fix | Use an approved, short-lived emergency identity and signed release from a runner in the region | Keep the signature checks on; record the change in Git afterward |
+| Someone changes cloud settings by hand | Compare live settings with Git, then review whether to keep or revert the change | Do not overwrite a needed change before review |
+| Moving from Jenkins to GitOps | Keep building the same signed artifacts while adding GitOps in steps | Test both paths before removing the old one |
+| Many pull requests wait in a large repo | Run only affected tests, use build caches, and split tests across workers | Limit concurrency so cost and load stay controlled |
+| One cluster fails in a multi-cluster rollout | Track each cluster separately and pause or continue by policy | Keep the intended version clear for each cluster |
+| Services depend on one another | Test API compatibility and deploy dependencies in order | Do not start a consumer until its dependencies are compatible |
+| A canary fails after receiving more traffic | Stop increasing traffic and investigate user-impacting metrics | Drain connections and use the approved rollback process |
+| A database change breaks older app versions | Add the new structure, migrate data, switch reads, then remove old fields | Check compatibility at every step |
+| A dependency is replaced by a malicious copy | Allow trusted sources, verify checksums, and review software inventories | Require build provenance and image signatures |
+| An untrusted image reaches the registry | Restrict who can publish and require signed images by digest | Link each running image to its source commit and approval |
 
-Operational rules: reconcile to git after every emergency · store **digests** not tags · rollbacks = git revert + helm rollback · proxy/egress config enforced at build and runtime.
+Keep Git in sync after emergency changes. Prefer image digests over mutable
+tags. Follow the approved rollback process and control network access at
+build and runtime.
 
 ---
 
 ## 10. Pipeline Best Practices
 
-| Practice | Why |
+| Practice | Why it helps |
 | ---------- | ----- |
-| **Fail fast** | Lint/unit tests before expensive steps |
-| **Cache dependencies** | `actions/cache`, Docker layer cache |
-| **Pin versions** | `node:20.11.0`, action SHAs, image digests |
-| **OIDC over stored keys** | `id-token: write` → cloud role; no long-lived cloud creds in CI |
-| **Least privilege** | Job-scoped `permissions:` block |
-| **Immutable artifacts** | Tag by SHA + digest; promote, never rebuild per env |
-| **Branch protection** | Required checks + reviews before merge |
-| **SBOM + signing** | syft/cyclonedx + cosign — supply-chain non-negotiables |
+| **Run quick checks first** | Find simple errors before expensive build and scan steps |
+| **Cache dependencies** | Avoid downloading the same packages repeatedly |
+| **Pin versions** | Make builds repeatable |
+| **Use short-lived identity** | Avoid long-lived cloud keys in CI |
+| **Limit permissions** | Give each job only the access it needs |
+| **Keep artifacts fixed** | Promote the same tested image; do not rebuild for each environment |
+| **Protect branches** | Require checks and review before merging |
+| **List and sign software** | Record what's in the image and verify who built it |
 
 ---
 
 ## 11. Sound Bites & Quick Reference
 
-- "CI proves the artifact is good; CD decides when and how it reaches production."
-- "Immutable tags let you roll forward and back without rebuilding."
-- "Helm is a YAML generator, not a deployment engine."
-- "GitOps makes the deployment repo the source of truth — `git revert` is the rollback button."
-- "`kubectl apply` succeeding is not health; post-deploy verification is the real gate."
-- "Schema migrations at scale are expand/contract projects, not single deploys."
-- "Supply-chain security requires provenance, not just scanning."
+- "CI builds and checks the image; CD controls when it is deployed."
+- "Promote the same tested image instead of rebuilding it for each environment."
+- "Helm creates Kubernetes settings; Kubernetes runs the service."
+- "In GitOps, change Git to roll back; do not leave live settings out of sync."
+- "`kubectl apply` can succeed while the service is unhealthy. Check it after deployment."
+- "Change database structures in steps so old and new versions both work."
+- "A scan alone is not enough; verify who built the image and what it contains."
 
-| Step | Output | Failure mode |
+| Step | Result | Common problem |
 | --- | --- | --- |
-| Source control | Commit SHA | Conflicts, untested code |
-| CI tests | Test report | Build blocked |
-| Scans | CVE/quality report | Vulnerable deps, secrets |
-| Image build+sign | Signed immutable image | Build errors, supply-chain risk |
-| Registry push | Stored artifact | Auth/storage failure |
-| GitOps reconcile | Desired state applied | Drift, sync failure |
-| K8s rollout | Ready pods | Probe/scheduling failures |
-| Post-deploy verify | Health signal | Rollback triggered |
+| Source control | Commit ID | Conflicts or untested changes |
+| Tests | Test report | A test fails |
+| Code/security checks | Check reports | Quality issue or vulnerability |
+| Image build/sign | Verified image | Build or signing error |
+| Registry publish | Stored image | Access or storage error |
+| Deployment | Updated settings | Apply or sync failure |
+| Kubernetes rollout | Ready Pods | Probe or scheduling failure |
+| Post-deploy check | Service health | Stop or roll back |
