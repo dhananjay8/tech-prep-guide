@@ -25,6 +25,6 @@
 | Sliding Window | 76, 209, 424, 567, 904 | [JS](../solutions/misc/frequently-asked-questions/sliding-window-problems.js) / [Py](../solutions/misc/frequently-asked-questions/sliding-window-problems.py) |
 | Two Pointers | 11, 15, 26, 42, 75, 88 | [JS](../solutions/misc/frequently-asked-questions/two-pointers-problems.js) / [Py](../solutions/misc/frequently-asked-questions/two-pointers-problems.py) |
 | Binary Search | 33, 153, 162, 704 | [JS](../solutions/misc/frequently-asked-questions/binary-search-problems.js) / [Py](../solutions/misc/frequently-asked-questions/binary-search-problems.py) |
-| BFS | 102, 200, 994, 542, 286, 815 | [JS](../solutions/misc/frequently-asked-questions/bfs-problems.js) / [Py](../solutions/misc/frequently-asked-questions/bfs-problems.py) |
+| BFS | 102, 200, 994, 542, 815 | [JS](../solutions/misc/frequently-asked-questions/bfs-problems.js) / [Py](../solutions/misc/frequently-asked-questions/bfs-problems.py) |
 | Backtracking | 39, 46, 51, 78, 79 | [JS](../solutions/misc/frequently-asked-questions/backtracking-problems.js) / [Py](../solutions/misc/frequently-asked-questions/backtracking-problems.py) |
 | Dynamic Programming | 70, 198, 300, 322, 1143, 416 | [JS](../solutions/misc/frequently-asked-questions/dynamic-programming-problems.js) / [Py](../solutions/misc/frequently-asked-questions/dynamic-programming-problems.py) |

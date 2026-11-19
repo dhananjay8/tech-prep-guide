@@ -1,5 +1,5 @@
 -- ============================================
--- 16. Swap Salary
+-- 16. Swap Sex of Employees
 -- LeetCode #627
 -- ============================================
 -- Problem: Swap all 'f' and 'm' values in the sex column with a single UPDATE statement.

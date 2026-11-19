@@ -83,15 +83,15 @@ Practical implication for interview prep: **you are not expected to be the Spark
 
 | JD item | What "deep hands-on for architecture decisions" means here | Where to study |
 | --- | --- | --- |
-| TypeScript/JS full-stack | Structural typing, generics, discriminated unions, strict-mode flags, monorepo type-sharing between Angular/Node | `technologies/javascript/TypeScript.md` |
-| Node.js/Express | Middleware pipelines, error-handling middleware, async error handling, request lifecycle, security headers | `technologies/javascript/Express.md`, `Node-Advanced-Async-and-Internals.md` |
+| TypeScript/JS full-stack | Structural typing, generics, discriminated unions, strict-mode flags, monorepo type-sharing between Angular/Node | [TypeScript](../../../technologies/javascript/TypeScript.md) |
+| Node.js/Express | Middleware pipelines, error-handling middleware, async error handling, request lifecycle, security headers | [Express](../../../technologies/javascript/Express.md), [Node.js async and internals](../../../technologies/javascript/Node-Advanced-Async-and-Internals.md) |
 | Angular (Standalone Components, RxJS) | Component architecture without NgModules, RxJS operators for async state, change detection, reactive forms | See companion gap-fill note below |
-| AWS: Lambda, S3, ECS, ECR, IAM, VPC, CloudWatch, Secrets Manager | Container (ECS/Fargate) vs serverless (Lambda) trade-offs, IAM least-privilege roles per service, VPC basics for ECS task networking, Secrets Manager vs env vars, CloudWatch logs/alarms/dashboards | `technologies/cloud/aws/AWS-Compute-and-Serverless.md`, `AWS-Security-IAM-and-Governance.md`, `AWS-Networking-Edge-and-Content-Delivery.md` |
+| AWS: Lambda, S3, ECS, ECR, IAM, VPC, CloudWatch, Secrets Manager | Container (ECS/Fargate) vs serverless (Lambda) trade-offs, IAM least-privilege roles per service, VPC basics for ECS task networking, Secrets Manager vs env vars, CloudWatch logs/alarms/dashboards | [Compute](../../../technologies/cloud/aws/AWS-Compute-and-Serverless.md), [Security](../../../technologies/cloud/aws/AWS-Security-IAM-and-Governance.md), [Networking](../../../technologies/cloud/aws/AWS-Networking-Edge-and-Content-Delivery.md) |
 | PostgreSQL & Drizzle ORM | Schema migrations (Drizzle Kit), typed query builder vs raw SQL trade-offs, connection pooling from Lambda/ECS, transaction patterns | Practice: write a Drizzle schema + migration + typed query for a "dataset" entity |
-| CI/CD: GitHub Actions | Pipeline design (lint → type-check → test → build → deploy), environment promotion, OIDC-based AWS auth from GitHub Actions (no long-lived keys) | `technologies/devops/04-cicd.md`, `Production-CI-CD-and-GitOps-Deep-Dive.md` |
-| Docker for ECS | Multi-stage builds, image size/security scanning, ECR push, task definitions, Fargate vs EC2 launch type | `technologies/devops/03-docker.md` |
-| Testing strategy (Jest, Cypress) | **You define it for the team** — pyramid shape for a full-stack TS app, contract tests between Angular/Node, E2E critical-flow selection | `technologies/testing/Testing-Frameworks.md` (now includes full taxonomy, strategy framework, TDD/BDD trade-offs) |
-| Secure design (RBAC, JWT, OWASP) | JWT access/refresh token design, RBAC enforcement at API + UI layers, OWASP Top 10 mitigations (injection, broken auth, SSRF, etc.) | `technologies/devops/08-security.md` |
+| CI/CD: GitHub Actions | Pipeline design (lint → type-check → test → build → deploy), environment promotion, OIDC-based AWS auth from GitHub Actions (no long-lived keys) | [CI/CD](../../../technologies/devops/04-cicd.md), [Production CI/CD and GitOps](../../../technologies/devops/Production-CI-CD-and-GitOps-Deep-Dive.md) |
+| Docker for ECS | Multi-stage builds, image size/security scanning, ECR push, task definitions, Fargate vs EC2 launch type | [Docker](../../../technologies/devops/03-docker.md) |
+| Testing strategy (Jest, Cypress) | **You define it for the team** — pyramid shape for a full-stack TS app, contract tests between Angular/Node, E2E critical-flow selection | [Testing frameworks](../../../technologies/testing/Testing-Frameworks.md) (full taxonomy, strategy framework, TDD/BDD trade-offs) |
+| Secure design (RBAC, JWT, OWASP) | JWT access/refresh token design, RBAC enforcement at API + UI layers, OWASP Top 10 mitigations (injection, broken auth, SSRF, etc.) | [Security](../../../technologies/devops/08-security.md) |
 | Nx monorepo (nice-to-have) | Shared types between Angular frontend and Node backend, affected-project builds/tests, module boundaries | Practice: sketch an Nx workspace layout for this exact stack |
 | Leadership/mentoring | Code review standards, how to defend an architecture decision, cross-site (Munich/India) async collaboration | See `panel-questions.md` behavioral section |
 
@@ -100,7 +100,7 @@ Practical implication for interview prep: **you are not expected to be the Spark
 ## 5. Step-Wise Prep Roadmap
 
 1. **Week 1 — Platform literacy.** Read this README + `diagrams.md` until you can describe CDH's multi-account/dataset/Data Portal model unprompted, in under 2 minutes, without notes.
-2. **Week 1-2 — Stack depth.** Work through `TypeScript.md`, `Express.md`, AWS compute/security/networking notes above; for each, be able to give the 1-2 line "first response" opener and defend it under follow-up.
+2. **Week 1-2 — Stack depth.** Work through [TypeScript](../../../technologies/javascript/TypeScript.md), [Express](../../../technologies/javascript/Express.md), and the AWS compute/security/networking notes above; for each, be able to give the 1-2 line "first response" opener and defend it under follow-up.
 3. **Week 2 — Hands-on micro-build.** Stand up a tiny Express + Drizzle + PostgreSQL API behind a minimal Angular standalone-component page, containerize it, and push a GitHub Actions pipeline that deploys it to ECS Fargate. This single exercise touches almost every mandatory skill at once and gives you real talking points instead of memorized theory.
 4. **Week 2-3 — Testing strategy artifact.** Write a one-page testing strategy doc for your micro-build (what's unit vs integration vs E2E, what blocks a PR vs runs nightly) — this is literally what the JD says you'll own for the team.
 5. **Week 3 — Security pass.** Add JWT auth + RBAC middleware + an OWASP self-review to the micro-build.
@@ -185,7 +185,9 @@ Benefits: one source of truth for contracts, faster refactors, guardrails via li
 - AWS for Industries blog: [Scaling Automated Driving data processing and data management with BMW Group on AWS](https://aws.amazon.com/blogs/industries/scaling-autonomous-driving-data-processing-and-data-management-with-bmw-group-on-aws/)
 - AWS for Industries blog: [BMW Group unlocks insights from petabytes of data with agentic search on AWS](https://aws.amazon.com/blogs/industries/bmw-group-unlocks-insights-from-petabytes-of-data-with-agentic-search-on-aws/)
 - AWS case study: [Unlock the Power of Data using AWS-Based Data Lake | BMW Group](https://aws.amazon.com/solutions/case-studies/bmw-group-case-study/)
-- AWS re:Invent 2019 deck: *Creating a data-driven, cloud-native ecosystem at BMW Group (AUT306)*
-- Job posting: *Datahub - Architect / Tech Lead (AWS & Full-Stack TypeScript)*, BMW TechWorks, Pune — via Dr.Job
-- Sibling posting: *Datahub - Backend Developer / Data Engineer*, BMW TechWorks, Pune
-- LinkedIn postings referencing BMW TechWorks India full-stack/DevOps hiring and stack (Angular, ag-Grid, Nx, SonarQube)
+- AWS re:Invent 2019 deck: [Creating a data-driven, cloud-native ecosystem at BMW Group (AUT306)](https://d1.awsstatic.com/events/reinvent/2019/Creating_a_data-driven,_cloud-native_ecosystem_at_BMW_Group_AUT306.pdf)
+- Historical job posting: [Datahub - Architect / Tech Lead (AWS & Full-Stack TypeScript)](https://www.drjobpro.com/india/jobs/datahub-architect-tech-lead-aws-full-stack-typescript-pune-bmw-techworks-MSPK9JNX08MGPOU), BMW TechWorks, Pune — via Dr.Job
+- Historical sibling posting: [Datahub - Backend Developer / Data Engineer](https://www.drjobpro.com/india/jobs/datahub-backend-developer-data-engineer-pune-bmw-techworks-MSPH1SEB08FZPN6), BMW TechWorks, Pune — via Dr.Job
+- Other LinkedIn hiring posts provided additional background on the stack; they are not individually cited here.
+
+The job postings are historical sources and may no longer represent open roles.

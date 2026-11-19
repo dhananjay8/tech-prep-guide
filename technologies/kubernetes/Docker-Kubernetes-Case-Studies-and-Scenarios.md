@@ -373,6 +373,8 @@ failure exercise.
 
 ## 7. Supporting-Source Coverage
 
+These source documents informed the guide but are not included in this repository.
+
 - `Docker_Kubernetes.md`: Load-balancer use cases, Deployments and
   Services, autoscaling, CI/CD monitoring, design mistakes, etcd, traffic
   models, and persistent storage.

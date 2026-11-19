@@ -33,6 +33,6 @@ Practical frontend/full-stack prompts for interview rounds.
 - [35-tree-view.md](./components/35-tree-view.md)
 
 ## Evaluation
-- Use `practice/machine-coding/_evaluation-rubric.md` for self-review after each implementation.
+- Use the [evaluation rubric](./_evaluation-rubric.md) for self-review after each implementation.
 - Target: working MVP in 40-50 minutes + 10 minutes for cleanup/refactor notes.
 - Each question document includes requirements or clarifying questions, a suggested implementation, and interview trade-offs.

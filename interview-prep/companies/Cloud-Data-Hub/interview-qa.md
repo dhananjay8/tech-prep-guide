@@ -130,7 +130,7 @@ A: Enable ECR image scanning on push, pin base image versions (not `latest`), ru
 ### Testing Strategy (Jest, Cypress)
 
 **Q36. You're asked to "define the testing strategy for the team" — what's your first move?**
-A: Map the critical user journeys (dataset creation, access request/approval, provider onboarding) and the failure cost of each, then size test investment accordingly: heavy Jest unit tests on business/validation logic, Jest + Supertest integration tests against a real ephemeral Postgres for the API layer, and a small, curated set of Cypress E2E tests for the handful of journeys that must never break — not a blanket "test everything equally" rule. (Full framework in `technologies/testing/Testing-Frameworks.md`.)
+A: Map the critical user journeys (dataset creation, access request/approval, provider onboarding) and the failure cost of each, then size test investment accordingly: heavy Jest unit tests on business/validation logic, Jest + Supertest integration tests against a real ephemeral Postgres for the API layer, and a small, curated set of Cypress E2E tests for the handful of journeys that must never break — not a blanket "test everything equally" rule. (See the [testing framework](../../../technologies/testing/Testing-Frameworks.md).)
 
 **Q37. How do you keep Cypress E2E tests from becoming the team's biggest CI bottleneck?**
 A: Keep the E2E suite small and curated (critical paths only), run it against a stable staging environment rather than spinning up the whole stack per PR, parallelize/shard runs, and push anything that doesn't need a real browser down into Jest/component tests instead.

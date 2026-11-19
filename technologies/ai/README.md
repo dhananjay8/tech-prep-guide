@@ -1,6 +1,7 @@
 # AI Engineering — Staff Interview Guide
 
-Refactored from `supporting-docs/AI Foundations.md` into focused, interview-ready notes.
+Refactored from the original `AI Foundations.md` source into focused,
+interview-ready notes. The original source is not included in this repository.
 
 ## Start Here
 

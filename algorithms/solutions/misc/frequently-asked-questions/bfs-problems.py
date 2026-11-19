@@ -1,12 +1,11 @@
 """
-BFS — 7 Core Problems (Python)
+BFS — 5 Core Problems, plus a separate Word Ladder solution (Python)
 
 LC 102 — Binary Tree Level Order Traversal
 LC 200 — Number of Islands
 LC 994 — Rotting Oranges
 LC 542 — 01 Matrix
 LC 127 — Word Ladder (see word-ladder.py)
-LC 286 — Walls and Gates
 LC 815 — Bus Routes
 """
 

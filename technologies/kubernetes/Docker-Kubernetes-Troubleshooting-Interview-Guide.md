@@ -442,6 +442,8 @@ checking the runtime, namespaces, and authorization.
 
 ## 11. Supporting-Source Coverage
 
+These source documents informed the guide but are not included in this repository.
+
 - `Docker_Kubernetes (1).md`: `ErrImagePull`, `ImagePullBackOff`,
   registry reachability, invalid image references, `CrashLoopBackOff`,
   and container stop/runtime failures.

@@ -1,5 +1,5 @@
 -- ============================================
--- 11. Classes More Than 5 Students
+-- 11. Classes With at Least 5 Students
 -- LeetCode #596
 -- ============================================
 -- Problem: Find all classes that have at least five students.

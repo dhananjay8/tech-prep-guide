@@ -23,11 +23,18 @@ This map prevents source topics from being lost while keeping each concept in on
 | Live failures: lock, drift, ghost resource, refactor, adoption | [Scenarios and Rapid Review](./Terraform-Scenarios-and-Rapid-Review.md) |
 | Commands, common questions and sound bites | [Scenarios and Rapid Review](./Terraform-Scenarios-and-Rapid-Review.md) |
 
-## Source Files Preserved
+## Original Source Material
 
-- `../../../../supporting-docs/[WIP] Terraform.md`
-- `../../../../supporting-docs/Terraform.pdf`
-- `../../../../supporting-docs/Terraform Cheat Sheet.pdf`
-- `../../../../supporting-docs/10 Terraform Scenarios.pdf`
+The following source documents were used during authoring but are not included
+in this repository:
 
-The Markdown source was used as the editable corpus. PDFs remain unchanged reference material and are not claimed as exhaustively transcribed. Advanced platform topics and the question bank extend beyond the source corpus to cover common Staff Engineer interview expectations; version-sensitive product behavior must be checked against pinned documentation.
+- `[WIP] Terraform.md`
+- `Terraform.pdf`
+- `Terraform Cheat Sheet.pdf`
+- `10 Terraform Scenarios.pdf`
+
+The Markdown source was used as the editable corpus. The PDFs were reference
+material and are not claimed as exhaustively transcribed. Advanced platform
+topics and the question bank extend beyond the source corpus to cover common
+Staff Engineer interview expectations; version-sensitive product behavior must
+be checked against pinned documentation.

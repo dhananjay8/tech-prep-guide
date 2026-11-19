@@ -15,12 +15,12 @@ Structured list of common SQL interview problems with local solutions.
 | 7 | Employee Bonus | [577](https://leetcode.com/problems/employee-bonus/) | [`07-employee-bonus.sql`](./07-employee-bonus.sql) | `LEFT JOIN` + filter |
 | 8 | Find Customer Referee | [584](https://leetcode.com/problems/find-customer-referee/) | [`08-find-customer-referee.sql`](./08-find-customer-referee.sql) | `NULL` handling |
 | 10 | Big Countries | [595](https://leetcode.com/problems/big-countries/) | [`10-big-countries.sql`](./10-big-countries.sql) | Simple filter |
-| 11 | Classes More Than 5 Students | [596](https://leetcode.com/problems/classes-more-than-5-students/) | [`11-classes-more-than-5-students.sql`](./11-classes-more-than-5-students.sql) | Aggregation |
+| 11 | Classes With at Least 5 Students | [596](https://leetcode.com/problems/classes-with-at-least-5-students/) | [`11-classes-more-than-5-students.sql`](./11-classes-more-than-5-students.sql) | Aggregation |
 | 12 | Sales Person | [607](https://leetcode.com/problems/sales-person/) | [`12-sales-person.sql`](./12-sales-person.sql) | Multi-table filtering |
 | 13 | Triangle Judgement | [610](https://leetcode.com/problems/triangle-judgement/) | [`13-triangle-judgement.sql`](./13-triangle-judgement.sql) | `CASE WHEN` |
 | 14 | Biggest Single Number | [619](https://leetcode.com/problems/biggest-single-number/) | [`14-biggest-single-number.sql`](./14-biggest-single-number.sql) | Aggregation + max |
 | 15 | Not Boring Movies | [620](https://leetcode.com/problems/not-boring-movies/) | [`15-not-boring-movies.sql`](./15-not-boring-movies.sql) | Filter + sort |
-| 16 | Swap Salary | [627](https://leetcode.com/problems/swap-salary/) | [`16-swap-salary.sql`](./16-swap-salary.sql) | Conditional update |
+| 16 | Swap Sex of Employees | [627](https://leetcode.com/problems/swap-sex-of-employees/) | [`16-swap-salary.sql`](./16-swap-salary.sql) | Conditional update |
 | 18 | Product Sales Analysis I | [1068](https://leetcode.com/problems/product-sales-analysis-i/) | [`18-product-sales-analysis-I.sql`](./18-product-sales-analysis-I.sql) | Join projection |
 | 19 | Project Employees I | [1075](https://leetcode.com/problems/project-employees-i/) | [`19-project-employees-I.sql`](./19-project-employees-I.sql) | Group average |
 | 20 | Sales Analysis III | [1084](https://leetcode.com/problems/sales-analysis-iii/) | [`20-sales-analysis-III.sql`](./20-sales-analysis-III.sql) | Date range filtering |

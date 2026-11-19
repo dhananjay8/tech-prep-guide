@@ -1,5 +1,5 @@
 /**
- * BFS — 7 Core Problems
+ * BFS — 5 Core Problems, plus a separate Word Ladder solution
  *
  * Template:
  *   queue = [start]; visited = new Set([start])
@@ -14,7 +14,6 @@
  *   LC 994 — Rotting Oranges (Medium)
  *   LC 542 — 01 Matrix (Medium)
  *   LC 127 — Word Ladder (Hard) — see word-ladder.js
- *   LC 286 — Walls and Gates (Medium)
  *   LC 815 — Bus Routes (Hard)
  */
 

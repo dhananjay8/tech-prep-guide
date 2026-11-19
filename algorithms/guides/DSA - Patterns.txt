@@ -79,7 +79,7 @@
  - https://www.programiz.com/dsa/selection-sort
 
 9. Merge Sort: Algorithm that works by dividing an array into smaller subarrays, sorting each subarray.
- - https://lnkd.in/dt-zCrtp
+ - https://www.programiz.com/dsa/merge-sort
  - https://lnkd.in/dZH54Kuy
 
 10. Quick Sort: Highly effective sorting technique that divides a large data array into smaller ones.
@@ -102,7 +102,7 @@
  - https://lnkd.in/dYuQMyKA
 
 15. Dijkstra's Algorithm: To find the shortest path between the nodes in the graph.
- - https://lnkd.in/djmrQhAy.
+ - https://lnkd.in/djmrQhAy
  - https://lnkd.in/dCRg2SJE
 
 16. Kadane's Algorithm: To find the maximum sum of contiguous subarray in an array.

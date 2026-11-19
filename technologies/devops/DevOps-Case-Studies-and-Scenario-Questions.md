@@ -570,6 +570,8 @@ Before finishing an answer, ask:
 
 ## 7. Supporting-Source Coverage
 
+These source documents informed the guide but are not included in this repository.
+
 - `DevOps_ General Notes.md`: CI versus delivery/deployment, pipeline
   reliability and speed, artifact promotion, GitOps, deployment
   verification, rollback, and production delivery failures.

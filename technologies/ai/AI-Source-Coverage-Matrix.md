@@ -1,6 +1,9 @@
 # AI Foundations — Source Coverage Matrix
 
-This matrix maps every major topic cluster from `supporting-docs/AI Foundations.md` into the split interview guide. Repeated source sections are intentionally consolidated rather than copied multiple times.
+This matrix maps major topic clusters from the original `AI Foundations.md`
+source into the split interview guide. The original source is not included in
+this repository. Repeated source sections are intentionally consolidated rather
+than copied multiple times.
 
 ## 1. Embeddings, Search, and RAG
 
